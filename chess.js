@@ -397,7 +397,7 @@ function AddWhitePawnMovesToMoveList(element,board,movelist)
 
     validmoves=whitepawncaptures[element].filter(function(value){if(board[value.to]!=" " && board[value.to]==board[value.to].toLowerCase()) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
-    validmoves=whitepawnmoves[element].filter(function(value){if(board[value.to]==" " && value.from[) return true; else return false; });
+    validmoves=whitepawnmoves[element].filter(function(value){if(board[value.to]==" ") return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
 }
 
