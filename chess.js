@@ -12,6 +12,7 @@
  *   En Passant
  *   Promotion
  *   Pawn jumps over pieces when making doublestep move
+ *   Kings are just high valued material
  *   GUI: Drag'n'Drop
  *   Faster movegeneration
  *   faster search?
@@ -26,23 +27,23 @@
  */
 
 var book=[
-    { position : "rnbqkbnrpppppppp                                PPPPPPPPRNBQKBNR W", move: {from: "e2", to: "e4", promote: ""} },
-    { position : "rnbqkbnrpppppppp                    P           PPPP PPPRNBQKBNR B", move: {from: "e7", to: "e5", promote: ""} },
-    { position : "rnbqkbnrpppp ppp            p       P           PPPP PPPRNBQKBNR B", move: {from: "g1", to: "f3", promote: ""} },
-    { position : "rnbqkbnrpppp ppp            p       P        N  PPPP PPPRNBQKB R B", move: {from: "b8", to: "c6", promote: ""} },
-    { position : "r bqkbnrpppp ppp  n         p       P        N  PPPP PPPRNBQKB R B", move: {from: "f1", to: "b5", promote: ""} }
+    { position : "rnbqkbnrpppppppp                                PPPPPPPPRNBQKBNR W", move: {from: 12, to: 28, promote: ""} },
+    { position : "rnbqkbnrpppppppp                    P           PPPP PPPRNBQKBNR B", move: {from: 52, to: 36, promote: ""} },
+    { position : "rnbqkbnrpppp ppp            p       P           PPPP PPPRNBQKBNR W", move: {from: 6, to: 21, promote: ""} },
+    { position : "rnbqkbnrpppp ppp            p       P        N  PPPP PPPRNBQKB R B", move: {from: 57, to: 42, promote: ""} },
+    { position : "r bqkbnrpppp ppp  n         p       P        N  PPPP PPPRNBQKB R W", move: {from: 5, to: 33, promote: ""} }
 ];
 
 function GetBoardString(board)
 {
-    return board["a8"]+board["b8"]+board["c8"]+board["d8"]+board["e8"]+board["f8"]+board["g8"]+board["h8"]+
-           board["a7"]+board["b7"]+board["c7"]+board["d7"]+board["e7"]+board["f7"]+board["g7"]+board["h7"]+
-           board["a6"]+board["b6"]+board["c6"]+board["d6"]+board["e6"]+board["f6"]+board["g6"]+board["h6"]+
-           board["a5"]+board["b5"]+board["c5"]+board["d5"]+board["e5"]+board["f5"]+board["g5"]+board["h5"]+
-           board["a4"]+board["b4"]+board["c4"]+board["d4"]+board["e4"]+board["f4"]+board["g4"]+board["h4"]+
-           board["a3"]+board["b3"]+board["c3"]+board["d3"]+board["e3"]+board["f3"]+board["g3"]+board["h3"]+
-           board["a2"]+board["b2"]+board["c2"]+board["d2"]+board["e2"]+board["f2"]+board["g2"]+board["h2"]+
-           board["a1"]+board["b1"]+board["c1"]+board["d1"]+board["e1"]+board["f1"]+board["g1"]+board["h1"]+
+    return board.pos[56]+board.pos[57]+board.pos[58]+board.pos[59]+board.pos[60]+board.pos[61]+board.pos[62]+board.pos[63]+
+           board.pos[48]+board.pos[49]+board.pos[50]+board.pos[51]+board.pos[52]+board.pos[53]+board.pos[54]+board.pos[55]+
+           board.pos[40]+board.pos[41]+board.pos[42]+board.pos[43]+board.pos[44]+board.pos[45]+board.pos[46]+board.pos[47]+
+           board.pos[32]+board.pos[33]+board.pos[34]+board.pos[35]+board.pos[36]+board.pos[37]+board.pos[38]+board.pos[39]+
+           board.pos[24]+board.pos[25]+board.pos[26]+board.pos[27]+board.pos[28]+board.pos[29]+board.pos[30]+board.pos[31]+
+           board.pos[16]+board.pos[17]+board.pos[18]+board.pos[19]+board.pos[20]+board.pos[21]+board.pos[22]+board.pos[23]+
+           board.pos[8]+board.pos[9]+board.pos[10]+board.pos[11]+board.pos[12]+board.pos[13]+board.pos[14]+board.pos[15]+
+           board.pos[0]+board.pos[1]+board.pos[2]+board.pos[3]+board.pos[4]+board.pos[5]+board.pos[6]+board.pos[7]+
            " " + board.tomove;
 }
 
@@ -54,7 +55,6 @@ function GetBookMove(board)
     for(var i=0;i<book.length;i++) {
         if(boardstr==book[i].position) {
             move = book[i].move;
-            console.log(move);
         }
     }
     return move;
@@ -74,8 +74,8 @@ function GenerateSquares()
     var num = ["1", "2", "3", "4", "5", "6", "7", "8"];
     var squares = [];
 
-    for(var a=0;a<alfa.length;a++)
-      for(var n=0;n<num.length;n++)
+    for(var n=0;n<num.length;n++)
+      for(var a=0;a<alfa.length;a++)
         squares.push(alfa[a]+num[n]);
     return squares;
 }
@@ -88,9 +88,9 @@ function GenerateSquareIndex()
     var num = ["1", "2", "3", "4", "5", "6", "7", "8"];
     var squares = [];
 
-    for(var a=0;a<alfa.length;a++)
-      for(var n=0;n<num.length;n++)
-        squareindex[alfa[a]+num[n]]=a*alfa.length+n;
+    for(var n=0;n<num.length;n++)
+      for(var a=0;a<alfa.length;a++)
+        squareindex[alfa[a]+num[n]]=a+n*num.length;
     return squareindex;
 }
 
@@ -99,34 +99,66 @@ function GetSquareIndex(square,squareindex)
     return squareindex[square];
 }
 
-function GenerateKnightMove(from,to)
-{
-    var knightmove = { "from":from, "to":to, promote:"" };
-    return knightmove;
+function GetPieceTypes()
+{ 
+    return {"K":"wk", "Q":"wq", "R":"wr", "B":"wb", "N":"wn", "P":"wp", "k":"bk", "q":"bq", "r":"br", "b":"bb", "n":"bn", "p":"bp", " ":"" };
 }
 
-function GenerateKnightMoves(squares)
+function GenerateKnightMove(from,to)
+{
+    return { "from":from, "to":to, promote:"" };
+}
+
+function GenerateKnightMoves()
 {
     var knightmoves = {};
     var knightmove = {};
     var knightoffsets = [ -17, -15, -10, -6, 6, 10, 15, 17 ]; 
 
-    for(var i=0;i<squares.length;i++)
+    for(var i=0;i<64;i++)
     {
-        knightmoves[squares[i]]=[];
+        knightmoves[i]=[];
         for(var o=0;o<knightoffsets.length;o++) 
         {
             if( i + knightoffsets[o] > -1 && i + knightoffsets[o] < 64 &&
                 Math.abs(i%8 - (i+knightoffsets[o])%8) < 3
               ) 
             {
-                knightmoves[squares[i]].push(GenerateKnightMove(squares[i],squares[i+knightoffsets[o]]));
+                knightmoves[i].push({ "from":i, "to":i+knightoffsets[o], promote:"" }); // GenerateKnightMove(i,i+knightoffsets[o]));
             }
         }
     }
     return knightmoves;
 }
 
+function GetEmptyPosition()
+{
+    return {
+        pos:[" ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " "],
+        wkc:false, wqc:false, bkc:false, bqc:false, 
+        passant:-1,tomove:"W",
+        movenumber:1,drawcounter:0,
+        wk:[],
+        wq:[],
+        wr:[],
+        wb:[],
+        wn:[],
+        wp:[],
+        bk:[],
+        bq:[],
+        br:[],
+        bb:[],
+        bn:[],
+        bp:[]
+    };
+}
 
 
 /*
@@ -158,17 +190,24 @@ function AddKingMovesToMoveList(element,board,squares,squareindex,movelist)
 
     for(var o=0;o<offsets.length;o++)
     {
-        if(GetSquareIndex(element,squareindex)+offsets[o] > -1 &&
-           GetSquareIndex(element,squareindex)+offsets[o] < 64 &&
-           Math.abs((GetSquareIndex(element,squareindex))%8 - (GetSquareIndex(element,squareindex)+offsets[o])%8) < 2)
+        if(element+offsets[o] > -1 &&
+           element+offsets[o] < 64 &&
+           Math.abs(element%8 - (element+offsets[o])%8) < 2)
         {
-            if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]]]==" " ||
-               (isWhiteToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]]].toLowerCase()) ||
-               (isBlackToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]]].toUpperCase()))
+            if(board.pos[element+offsets[o]]==" " ||
+               (isWhiteToMove(board) && board.pos[element+offsets[o]]==board.pos[element+offsets[o]].toLowerCase()) ||
+               (isBlackToMove(board) && board.pos[element+offsets[o]]==board.pos[element+offsets[o]].toUpperCase()))
             {
-                validmoves.push({from:element,to:squares[GetSquareIndex(element,squareindex)+offsets[o]],promote:""});
+                validmoves.push({from:element,to:element+offsets[o],promote:""});
             }
         }
+    }
+    if(board.tomove=="W") {
+        if(board.wqc==true && board.pos[1]==" " && board.pos[2]==" " && board.pos[3]==" ") { validmoves.push({from:4,to:2,promote:""}); }
+        if(board.wkc==true && board.pos[5]==" " && board.pos[6]==" ") { validmoves.push({from:4,to:6,promote:""}); }
+    } else {
+        if(board.bqc==true && board.pos[57]==" " && board.pos[58]==" " && board.pos[59]==" ") { validmoves.push({from:60,to:58,promote:""}); }
+        if(board.bkc==true && board.pos[61]==" " && board.pos[62]==" ") { validmoves.push({from:60,to:62,promote:""}); }
     }
     Array.prototype.push.apply(movelist,validmoves);
 }
@@ -185,16 +224,16 @@ function AddQueenMovesToMoveList(element,board,squares,squareindex,movelist)
     {
         for(var l=1;l<8;l++) 
         {
-            if(GetSquareIndex(element,squareindex)+offsets[o]*l > -1 &&
-               GetSquareIndex(element,squareindex)+offsets[o]*l < 64 &&
-               Math.abs((GetSquareIndex(element,squareindex)+offsets[o]*(l-1))%8 - (GetSquareIndex(element,squareindex)+offsets[o]*l)%8) < 2)
+            if(element+offsets[o]*l > -1 &&
+               element+offsets[o]*l < 64 &&
+               Math.abs((element+offsets[o]*(l-1))%8 - (element+offsets[o]*l)%8) < 2)
             {
-                if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==" " ||
-                   (isWhiteToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]].toLowerCase()) ||
-                   (isBlackToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]].toUpperCase()))
+                if(board.pos[element+offsets[o]*l]==" " ||
+                   (isWhiteToMove(board) && board.pos[element+offsets[o]*l]==board.pos[element+offsets[o]*l].toLowerCase()) ||
+                   (isBlackToMove(board) && board.pos[element+offsets[o]*l]==board.pos[element+offsets[o]*l].toUpperCase()))
                 {
-                    validmoves.push({from:element,to:squares[GetSquareIndex(element,squareindex)+offsets[o]*l],promote:""});
-                    if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]!=" ") { l=8; break; }
+                    validmoves.push({from:element,to:element+offsets[o]*l,promote:""});
+                    if(board.pos[element+offsets[o]*l]!=" ") { l=8; break; }
                 } else {
                     l=8; break;
                 }
@@ -218,16 +257,16 @@ function AddRookMovesToMoveList(element,board,squares,squareindex,movelist)
     {
         for(var l=1;l<8;l++) 
         {
-            if(GetSquareIndex(element,squareindex)+offsets[o]*l > -1 &&
-               GetSquareIndex(element,squareindex)+offsets[o]*l < 64 &&
-               Math.abs((GetSquareIndex(element,squareindex)+offsets[o]*(l-1))%8 - (GetSquareIndex(element,squareindex)+offsets[o]*l)%8) < 2)
+            if(element+offsets[o]*l > -1 &&
+               element+offsets[o]*l < 64 &&
+               Math.abs((element+offsets[o]*(l-1))%8 - (element+offsets[o]*l)%8) < 2)
             {
-                if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==" " ||
-                   (isWhiteToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]].toLowerCase()) ||
-                   (isBlackToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]].toUpperCase()))
+                if(board.pos[element+offsets[o]*l]==" " ||
+                   (isWhiteToMove(board) && board.pos[element+offsets[o]*l]==board.pos[element+offsets[o]*l].toLowerCase()) ||
+                   (isBlackToMove(board) && board.pos[element+offsets[o]*l]==board.pos[element+offsets[o]*l].toUpperCase()))
                 {
-                    validmoves.push({from:element,to:squares[GetSquareIndex(element,squareindex)+offsets[o]*l],promote:""});
-                    if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]!=" ") { l=8; break; }
+                    validmoves.push({from:element,to:element+offsets[o]*l,promote:""});
+                    if(board.pos[element+offsets[o]*l]!=" ") { l=8; break; }
                 } else {
                     l=8; break;
                 }
@@ -251,16 +290,16 @@ function AddBishopMovesToMoveList(element,board,squares,squareindex,movelist)
     {
         for(var l=1;l<8;l++) 
         {
-            if(GetSquareIndex(element,squareindex)+offsets[o]*l > -1 &&
-               GetSquareIndex(element,squareindex)+offsets[o]*l < 64 &&
-               Math.abs((GetSquareIndex(element,squareindex)+offsets[o]*(l-1))%8 - (GetSquareIndex(element,squareindex)+offsets[o]*l)%8) < 2)
+            if(element+offsets[o]*l > -1 &&
+               element+offsets[o]*l < 64 &&
+               Math.abs((element+offsets[o]*(l-1))%8 - (element+offsets[o]*l)%8) < 2)
             {
-                if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==" " ||
-                   (isWhiteToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]].toLowerCase()) ||
-                   (isBlackToMove(board) && board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]==board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]].toUpperCase()))
+                if(board.pos[element+offsets[o]*l]==" " ||
+                   (isWhiteToMove(board) && board.pos[element+offsets[o]*l]==board.pos[element+offsets[o]*l].toLowerCase()) ||
+                   (isBlackToMove(board) && board.pos[element+offsets[o]*l]==board.pos[element+offsets[o]*l].toUpperCase()))
                 {
-                    validmoves.push({from:element,to:squares[GetSquareIndex(element,squareindex)+offsets[o]*l],promote:""});
-                    if(board[squares[GetSquareIndex(element,squareindex)+offsets[o]*l]]!=" ") { l=8; break; }
+                    validmoves.push({from:element,to:element+offsets[o]*l,promote:""});
+                    if(board.pos[element+offsets[o]*l]!=" ") { l=8; break; }
                 } else {
                     l=8; break;
                 }
@@ -276,9 +315,9 @@ function AddKnightMovesToMoveList(element,board,movelist,knightmoves)
 {
     var validmoves;
 
-    validmoves=knightmoves[element].filter(function(value){if(board[value.to]!=" " && ((isWhiteToMove(board) && board[value.to]==board[value.to].toLowerCase()) || (isBlackToMove(board) && board[value.to]==board[value.to].toUpperCase()))) return true; else return false; });
+    validmoves=knightmoves[element].filter(function(value){if(board.pos[value.to]!=" " && ((isWhiteToMove(board) && board.pos[value.to]==board.pos[value.to].toLowerCase()) || (isBlackToMove(board) && board.pos[value.to]==board.pos[value.to].toUpperCase()))) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
-    validmoves=knightmoves[element].filter(function(value){if(board[value.to]==" ") return true; else return false; });
+    validmoves=knightmoves[element].filter(function(value){if(board.pos[value.to]==" ") return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
 }
 
@@ -288,116 +327,115 @@ function AddKnightMovesToMoveList(element,board,movelist,knightmoves)
 function AddWhitePawnMovesToMoveList(element,board,movelist)
 {
     var validmoves;
-    whitepawnmoves={
-                     "a2":[{from:"a2",to:"a3",promote:""},{from:"a2",to:"a4",promote:""}],
-                     "a3":[{from:"a3",to:"a4",promote:""}],
-                     "a4":[{from:"a4",to:"a5",promote:""}],
-                     "a5":[{from:"a5",to:"a6",promote:""}],
-                     "a6":[{from:"a6",to:"a7",promote:""}],
-                     "a7":[{from:"a7",to:"a8",promote:"Q"},{from:"a7",to:"a8",promote:"R"},{from:"a7",to:"a8",promote:"B"},{from:"a7",to:"a8",promote:"N"}],
-                     "b2":[{from:"b2",to:"b3",promote:""},{from:"b2",to:"b4",promote:""}],
-                     "b3":[{from:"b3",to:"b4",promote:""}],
-                     "b4":[{from:"b4",to:"b5",promote:""}],
-                     "b5":[{from:"b5",to:"b6",promote:""}],
-                     "b6":[{from:"b6",to:"b7",promote:""}],
-                     "b7":[{from:"b7",to:"b8",promote:"Q"},{from:"b7",to:"b8",promote:"R"},{from:"b7",to:"b8",promote:"B"},{from:"b7",to:"b8",promote:"N"}],
-                     "c2":[{from:"c2",to:"c3",promote:""},{from:"c2",to:"c4",promote:""}],
-                     "c3":[{from:"c3",to:"c4",promote:""}],
-                     "c4":[{from:"c4",to:"c5",promote:""}],
-                     "c5":[{from:"c5",to:"c6",promote:""}],
-                     "c6":[{from:"c6",to:"c7",promote:""}],
-                     "c7":[{from:"c7",to:"c8",promote:"Q"},{from:"c7",to:"c8",promote:"R"},{from:"c7",to:"c8",promote:"B"},{from:"c7",to:"c8",promote:"N"}],
-                     "d2":[{from:"d2",to:"d3",promote:""},{from:"d2",to:"d4",promote:""}],
-                     "d3":[{from:"d3",to:"d4",promote:""}],
-                     "d4":[{from:"d4",to:"d5",promote:""}],
-                     "d5":[{from:"d5",to:"d6",promote:""}],
-                     "d6":[{from:"d6",to:"d7",promote:""}],
-                     "d7":[{from:"d7",to:"d8",promote:"Q"},{from:"d7",to:"d8",promote:"R"},{from:"d7",to:"d8",promote:"B"},{from:"d7",to:"d8",promote:"N"}],
-                     "e2":[{from:"e2",to:"e3",promote:""},{from:"e2",to:"e4",promote:""}],
-                     "e3":[{from:"e3",to:"e4",promote:""}],
-                     "e4":[{from:"e4",to:"e5",promote:""}],
-                     "e5":[{from:"e5",to:"e6",promote:""}],
-                     "e6":[{from:"e6",to:"e7",promote:""}],
-                     "e7":[{from:"e7",to:"e8",promote:"Q"},{from:"e7",to:"e8",promote:"R"},{from:"e7",to:"e8",promote:"B"},{from:"e7",to:"e8",promote:"N"}],
-                     "f2":[{from:"f2",to:"f3",promote:""},{from:"f2",to:"f4",promote:""}],
-                     "f3":[{from:"f3",to:"f4",promote:""}],
-                     "f4":[{from:"f4",to:"f5",promote:""}],
-                     "f5":[{from:"f5",to:"f6",promote:""}],
-                     "f6":[{from:"f6",to:"f7",promote:""}],
-                     "f7":[{from:"f7",to:"f8",promote:"Q"},{from:"f7",to:"f8",promote:"R"},{from:"f7",to:"f8",promote:"B"},{from:"f7",to:"f8",promote:"N"}],
-                     "g2":[{from:"g2",to:"g3",promote:""},{from:"g2",to:"g4",promote:""}],
-                     "g3":[{from:"g3",to:"g4",promote:""}],
-                     "g4":[{from:"g4",to:"g5",promote:""}],
-                     "g5":[{from:"g5",to:"g6",promote:""}],
-                     "g6":[{from:"g6",to:"g7",promote:""}],
-                     "g7":[{from:"g7",to:"g8",promote:"Q"},{from:"g7",to:"g8",promote:"R"},{from:"g7",to:"g8",promote:"B"},{from:"g7",to:"g8",promote:"N"}],
-                     "h2":[{from:"h2",to:"h3",promote:""},{from:"h2",to:"h4",promote:""}],
-                     "h3":[{from:"h3",to:"h4",promote:""}],
-                     "h4":[{from:"h4",to:"h5",promote:""}],
-                     "h5":[{from:"h5",to:"h6",promote:""}],
-                     "h6":[{from:"h6",to:"h7",promote:""}],
-                     "h7":[{from:"h7",to:"h8",promote:"Q"},{from:"h7",to:"h8",promote:"R"},{from:"h7",to:"h8",promote:"B"},{from:"h7",to:"h8",promote:"N"}]
+    var whitepawnmoves={
+                     8:[{from:8,to:16,promote:""},{from:8,to:24,promote:""}],
+                     16:[{from:16,to:24,promote:""}],
+                     24:[{from:24,to:32,promote:""}],
+                     32:[{from:32,to:40,promote:""}],
+                     40:[{from:40,to:48,promote:""}],
+                     48:[{from:48,to:56,promote:"Q"},{from:48,to:56,promote:"R"},{from:48,to:56,promote:"B"},{from:48,to:56,promote:"N"}],
+                     9:[{from:9,to:17,promote:""},{from:9,to:25,promote:""}],
+                     17:[{from:17,to:25,promote:""}],
+                     25:[{from:25,to:33,promote:""}],
+                     33:[{from:33,to:41,promote:""}],
+                     41:[{from:41,to:49,promote:""}],
+                     49:[{from:49,to:57,promote:"Q"},{from:49,to:57,promote:"R"},{from:49,to:57,promote:"B"},{from:49,to:57,promote:"N"}],
+                     10:[{from:10,to:18,promote:""},{from:10,to:26,promote:""}],
+                     18:[{from:18,to:26,promote:""}],
+                     26:[{from:26,to:34,promote:""}],
+                     34:[{from:34,to:42,promote:""}],
+                     42:[{from:42,to:50,promote:""}],
+                     50:[{from:50,to:58,promote:"Q"},{from:50,to:58,promote:"R"},{from:50,to:58,promote:"B"},{from:50,to:58,promote:"N"}],
+                     11:[{from:11,to:19,promote:""},{from:11,to:27,promote:""}],
+                     19:[{from:19,to:27,promote:""}],
+                     27:[{from:27,to:35,promote:""}],
+                     35:[{from:35,to:43,promote:""}],
+                     43:[{from:43,to:51,promote:""}],
+                     51:[{from:51,to:59,promote:"Q"},{from:51,to:59,promote:"R"},{from:51,to:59,promote:"B"},{from:51,to:59,promote:"N"}],
+                     12:[{from:12,to:20,promote:""},{from:12,to:28,promote:""}],
+                     20:[{from:20,to:28,promote:""}],
+                     28:[{from:28,to:36,promote:""}],
+                     36:[{from:36,to:44,promote:""}],
+                     44:[{from:44,to:52,promote:""}],
+                     52:[{from:52,to:60,promote:"Q"},{from:52,to:60,promote:"R"},{from:52,to:60,promote:"B"},{from:52,to:60,promote:"N"}],
+                     13:[{from:13,to:21,promote:""},{from:13,to:29,promote:""}],
+                     21:[{from:21,to:29,promote:""}],
+                     29:[{from:29,to:37,promote:""}],
+                     37:[{from:37,to:45,promote:""}],
+                     45:[{from:45,to:53,promote:""}],
+                     53:[{from:53,to:61,promote:"Q"},{from:53,to:61,promote:"R"},{from:53,to:61,promote:"B"},{from:53,to:61,promote:"N"}],
+                     14:[{from:14,to:22,promote:""},{from:14,to:30,promote:""}],
+                     22:[{from:22,to:30,promote:""}],
+                     30:[{from:30,to:38,promote:""}],
+                     38:[{from:38,to:46,promote:""}],
+                     46:[{from:46,to:54,promote:""}],
+                     54:[{from:54,to:62,promote:"Q"},{from:54,to:62,promote:"R"},{from:54,to:62,promote:"B"},{from:54,to:62,promote:"N"}],
+                     15:[{from:15,to:23,promote:""},{from:15,to:31,promote:""}],
+                     23:[{from:23,to:31,promote:""}],
+                     31:[{from:31,to:39,promote:""}],
+                     39:[{from:39,to:47,promote:""}],
+                     47:[{from:47,to:55,promote:""}],
+                     55:[{from:55,to:63,promote:"Q"},{from:55,to:63,promote:"R"},{from:55,to:63,promote:"B"},{from:55,to:63,promote:"N"}]
                    };
-    whitepawncaptures={
-                        "a2":[{from:"a2",to:"b3",promote:""}],
-                        "a3":[{from:"a3",to:"b4",promote:""}],
-                        "a4":[{from:"a4",to:"b5",promote:""}],
-                        "a5":[{from:"a5",to:"b6",promote:""}],
-                        "a6":[{from:"a6",to:"b7",promote:""}],
-                        "a7":[{from:"a7",to:"b8",promote:"Q"},{from:"a7",to:"b8",promote:"R"},{from:"a7",to:"b8",promote:"B"},{from:"a7",to:"b8",promote:"N"}],
-                        "b2":[{from:"b2",to:"a3",promote:""},{from:"b2",to:"c3",promote:""}],
-                        "b3":[{from:"b3",to:"a4",promote:""},{from:"b3",to:"c4",promote:""}],
-                        "b4":[{from:"b4",to:"a5",promote:""},{from:"b4",to:"c5",promote:""}],
-                        "b5":[{from:"b5",to:"a6",promote:""},{from:"b5",to:"c6",promote:""}],
-                        "b6":[{from:"b6",to:"a7",promote:""},{from:"b6",to:"c7",promote:""}],
-                        "b7":[{from:"b7",to:"a8",promote:"Q"},{from:"b7",to:"a8",promote:"R"},{from:"b7",to:"a8",promote:"B"},{from:"b7",to:"a8",promote:"N"},
-                              {from:"b7",to:"c8",promote:"Q"},{from:"b7",to:"c8",promote:"R"},{from:"b7",to:"c8",promote:"B"},{from:"b7",to:"c8",promote:"N"}],
-                        "c2":[{from:"c2",to:"b3",promote:""},{from:"c2",to:"d3",promote:""}],
-                        "c3":[{from:"c3",to:"b4",promote:""},{from:"c3",to:"d4",promote:""}],
-                        "c4":[{from:"c4",to:"b5",promote:""},{from:"c4",to:"d5",promote:""}],
-                        "c5":[{from:"c5",to:"b6",promote:""},{from:"c5",to:"d6",promote:""}],
-                        "c6":[{from:"c6",to:"b7",promote:""},{from:"c6",to:"d7",promote:""}],
-                        "c7":[{from:"c7",to:"b8",promote:"Q"},{from:"c7",to:"b8",promote:"R"},{from:"c7",to:"b8",promote:"B"},{from:"c7",to:"b8",promote:"N"},
-                              {from:"c7",to:"d8",promote:"Q"},{from:"c7",to:"d8",promote:"R"},{from:"c7",to:"d8",promote:"B"},{from:"c7",to:"d8",promote:"N"}],
-                        "d2":[{from:"d2",to:"c3",promote:""},{from:"d2",to:"e3",promote:""}],
-                        "d3":[{from:"d3",to:"c4",promote:""},{from:"d3",to:"e4",promote:""}],
-                        "d4":[{from:"d4",to:"c5",promote:""},{from:"d4",to:"e5",promote:""}],
-                        "d5":[{from:"d5",to:"c6",promote:""},{from:"d5",to:"e6",promote:""}],
-                        "d6":[{from:"d6",to:"c7",promote:""},{from:"d6",to:"e7",promote:""}],
-                        "d7":[{from:"d7",to:"c8",promote:"Q"},{from:"d7",to:"c8",promote:"R"},{from:"d7",to:"c8",promote:"B"},{from:"d7",to:"c8",promote:"N"},
-                              {from:"d7",to:"e8",promote:"Q"},{from:"d7",to:"e8",promote:"R"},{from:"d7",to:"e8",promote:"B"},{from:"d7",to:"e8",promote:"N"}],
-                        "e2":[{from:"e2",to:"d3",promote:""},{from:"e2",to:"f3",promote:""}],
-                        "e3":[{from:"e3",to:"d4",promote:""},{from:"e3",to:"f4",promote:""}],
-                        "e4":[{from:"e4",to:"d5",promote:""},{from:"e4",to:"f5",promote:""}],
-                        "e5":[{from:"e5",to:"d6",promote:""},{from:"e5",to:"f6",promote:""}],
-                        "e6":[{from:"e6",to:"d7",promote:""},{from:"e6",to:"f7",promote:""}],
-                        "e7":[{from:"e7",to:"d8",promote:"Q"},{from:"e7",to:"d8",promote:"R"},{from:"e7",to:"d8",promote:"B"},{from:"e7",to:"d8",promote:"N"},
-                              {from:"e7",to:"f8",promote:"Q"},{from:"e7",to:"f8",promote:"R"},{from:"e7",to:"f8",promote:"B"},{from:"e7",to:"f8",promote:"N"}],
-                        "f2":[{from:"f2",to:"e3",promote:""},{from:"f2",to:"g3",promote:""}],
-                        "f3":[{from:"f3",to:"e4",promote:""},{from:"f3",to:"g4",promote:""}],
-                        "f4":[{from:"f4",to:"e5",promote:""},{from:"f4",to:"g5",promote:""}],
-                        "f5":[{from:"f5",to:"e6",promote:""},{from:"f5",to:"g6",promote:""}],
-                        "f6":[{from:"f6",to:"e7",promote:""},{from:"f6",to:"g7",promote:""}],
-                        "f7":[{from:"f7",to:"e8",promote:"Q"},{from:"f7",to:"e8",promote:"R"},{from:"f7",to:"e8",promote:"B"},{from:"f7",to:"e8",promote:"N"},
-                              {from:"f7",to:"g8",promote:"Q"},{from:"f7",to:"g8",promote:"R"},{from:"f7",to:"g8",promote:"B"},{from:"f7",to:"g8",promote:"N"}],
-                        "g2":[{from:"g2",to:"f3",promote:""},{from:"g2",to:"h3",promote:""}],
-                        "g3":[{from:"g3",to:"f4",promote:""},{from:"g3",to:"h4",promote:""}],
-                        "g4":[{from:"g4",to:"f5",promote:""},{from:"g4",to:"h5",promote:""}],
-                        "g5":[{from:"g5",to:"f6",promote:""},{from:"g5",to:"h6",promote:""}],
-                        "g6":[{from:"g6",to:"f7",promote:""},{from:"g6",to:"h7",promote:""}],
-                        "g7":[{from:"g7",to:"f8",promote:"Q"},{from:"g7",to:"f8",promote:"R"},{from:"g7",to:"f8",promote:"B"},{from:"g7",to:"f8",promote:"N"},
-                              {from:"g7",to:"h8",promote:"Q"},{from:"g7",to:"h8",promote:"R"},{from:"g7",to:"h8",promote:"B"},{from:"g7",to:"h8",promote:"N"}],
-                        "h2":[{from:"h2",to:"g3",promote:""}],
-                        "h3":[{from:"h3",to:"g4",promote:""}],
-                        "h4":[{from:"h4",to:"g5",promote:""}],
-                        "h5":[{from:"h5",to:"g6",promote:""}],
-                        "h6":[{from:"h6",to:"g7",promote:""}],
-                        "h7":[{from:"h7",to:"g8",promote:"Q"},{from:"h7",to:"g8",promote:"R"},{from:"h7",to:"g8",promote:"B"},{from:"h7",to:"g8",promote:"N"}]
+    var whitepawncaptures={
+                        8:[{from:8,to:17,promote:""}],
+                        16:[{from:16,to:25,promote:""}],
+                        24:[{from:24,to:33,promote:""}],
+                        32:[{from:32,to:41,promote:""}],
+                        40:[{from:40,to:49,promote:""}],
+                        48:[{from:48,to:57,promote:"Q"},{from:48,to:57,promote:"R"},{from:48,to:57,promote:"B"},{from:48,to:57,promote:"N"}],
+                        9:[{from:9,to:16,promote:""},{from:9,to:18,promote:""}],
+                        17:[{from:17,to:24,promote:""},{from:17,to:26,promote:""}],
+                        25:[{from:25,to:32,promote:""},{from:25,to:34,promote:""}],
+                        33:[{from:33,to:40,promote:""},{from:33,to:42,promote:""}],
+                        41:[{from:41,to:48,promote:""},{from:41,to:50,promote:""}],
+                        49:[{from:49,to:56,promote:"Q"},{from:49,to:56,promote:"R"},{from:49,to:56,promote:"B"},{from:49,to:56,promote:"N"},
+                              {from:49,to:58,promote:"Q"},{from:49,to:58,promote:"R"},{from:49,to:58,promote:"B"},{from:49,to:58,promote:"N"}],
+                        10:[{from:10,to:17,promote:""},{from:10,to:19,promote:""}],
+                        18:[{from:18,to:25,promote:""},{from:18,to:27,promote:""}],
+                        26:[{from:26,to:33,promote:""},{from:26,to:35,promote:""}],
+                        34:[{from:34,to:41,promote:""},{from:34,to:43,promote:""}],
+                        42:[{from:42,to:49,promote:""},{from:42,to:51,promote:""}],
+                        50:[{from:50,to:57,promote:"Q"},{from:50,to:57,promote:"R"},{from:50,to:57,promote:"B"},{from:50,to:57,promote:"N"},
+                              {from:50,to:59,promote:"Q"},{from:50,to:59,promote:"R"},{from:50,to:59,promote:"B"},{from:50,to:59,promote:"N"}],
+                        11:[{from:11,to:18,promote:""},{from:11,to:20,promote:""}],
+                        19:[{from:19,to:26,promote:""},{from:19,to:28,promote:""}],
+                        27:[{from:27,to:34,promote:""},{from:27,to:36,promote:""}],
+                        35:[{from:35,to:42,promote:""},{from:35,to:44,promote:""}],
+                        43:[{from:43,to:50,promote:""},{from:43,to:52,promote:""}],
+                        51:[{from:51,to:58,promote:"Q"},{from:51,to:58,promote:"R"},{from:51,to:58,promote:"B"},{from:51,to:58,promote:"N"},
+                              {from:51,to:60,promote:"Q"},{from:51,to:60,promote:"R"},{from:51,to:60,promote:"B"},{from:51,to:60,promote:"N"}],
+                        12:[{from:12,to:19,promote:""},{from:12,to:21,promote:""}],
+                        20:[{from:20,to:27,promote:""},{from:20,to:29,promote:""}],
+                        28:[{from:28,to:35,promote:""},{from:28,to:37,promote:""}],
+                        36:[{from:36,to:43,promote:""},{from:36,to:45,promote:""}],
+                        44:[{from:44,to:51,promote:""},{from:44,to:53,promote:""}],
+                        52:[{from:52,to:59,promote:"Q"},{from:52,to:59,promote:"R"},{from:52,to:59,promote:"B"},{from:52,to:59,promote:"N"},
+                              {from:52,to:61,promote:"Q"},{from:52,to:61,promote:"R"},{from:52,to:61,promote:"B"},{from:52,to:61,promote:"N"}],
+                        13:[{from:13,to:20,promote:""},{from:13,to:22,promote:""}],
+                        21:[{from:21,to:28,promote:""},{from:21,to:30,promote:""}],
+                        29:[{from:29,to:36,promote:""},{from:29,to:38,promote:""}],
+                        37:[{from:37,to:44,promote:""},{from:37,to:46,promote:""}],
+                        45:[{from:45,to:52,promote:""},{from:45,to:54,promote:""}],
+                        53:[{from:53,to:60,promote:"Q"},{from:53,to:60,promote:"R"},{from:53,to:60,promote:"B"},{from:53,to:60,promote:"N"},
+                              {from:53,to:62,promote:"Q"},{from:53,to:62,promote:"R"},{from:53,to:62,promote:"B"},{from:53,to:62,promote:"N"}],
+                        14:[{from:14,to:21,promote:""},{from:14,to:23,promote:""}],
+                        22:[{from:22,to:29,promote:""},{from:22,to:31,promote:""}],
+                        30:[{from:30,to:37,promote:""},{from:30,to:39,promote:""}],
+                        38:[{from:38,to:45,promote:""},{from:38,to:47,promote:""}],
+                        46:[{from:46,to:53,promote:""},{from:46,to:55,promote:""}],
+                        54:[{from:54,to:61,promote:"Q"},{from:54,to:61,promote:"R"},{from:54,to:61,promote:"B"},{from:54,to:61,promote:"N"},
+                              {from:54,to:63,promote:"Q"},{from:54,to:63,promote:"R"},{from:54,to:63,promote:"B"},{from:54,to:63,promote:"N"}],
+                        15:[{from:15,to:22,promote:""}],
+                        23:[{from:23,to:30,promote:""}],
+                        31:[{from:31,to:38,promote:""}],
+                        39:[{from:39,to:46,promote:""}],
+                        47:[{from:47,to:54,promote:""}],
+                        55:[{from:55,to:62,promote:"Q"},{from:55,to:62,promote:"R"},{from:55,to:62,promote:"B"},{from:55,to:62,promote:"N"}]
                       };
-
-    validmoves=whitepawncaptures[element].filter(function(value){if(board[value.to]!=" " && board[value.to]==board[value.to].toLowerCase()) return true; else return false; });
+    validmoves=whitepawncaptures[element].filter(function(value){if(board.pos[value.to]!=" " && board.pos[value.to]==board.pos[value.to].toLowerCase()) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
-    validmoves=whitepawnmoves[element].filter(function(value){if(board[value.to]==" ") return true; else return false; });
+    validmoves=whitepawnmoves[element].filter(function(value){if(board.pos[value.to]==" ") return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
 }
 
@@ -408,115 +446,115 @@ function AddBlackPawnMovesToMoveList(element,board,movelist)
 {
     var validmoves;
     blackpawnmoves={
-                     "a7":[{from:"a7",to:"a6",promote:""},{from:"a7",to:"a5",promote:""}],
-                     "a6":[{from:"a6",to:"a5",promote:""}],
-                     "a5":[{from:"a5",to:"a4",promote:""}],
-                     "a4":[{from:"a4",to:"a3",promote:""}],
-                     "a3":[{from:"a3",to:"a2",promote:""}],
-                     "a2":[{from:"a2",to:"a1",promote:"q"},{from:"a2",to:"a1",promote:"r"},{from:"a2",to:"a1",promote:"b"},{from:"a2",to:"a1",promote:"n"}],
-                     "b7":[{from:"b7",to:"b6",promote:""},{from:"b7",to:"b5",promote:""}],
-                     "b6":[{from:"b6",to:"b5",promote:""}],
-                     "b5":[{from:"b5",to:"b4",promote:""}],
-                     "b4":[{from:"b4",to:"b3",promote:""}],
-                     "b3":[{from:"b3",to:"b2",promote:""}],
-                     "b2":[{from:"b2",to:"b1",promote:"q"},{from:"b2",to:"b1",promote:"r"},{from:"b2",to:"b1",promote:"b"},{from:"b2",to:"b1",promote:"n"}],
-                     "c7":[{from:"c7",to:"c6",promote:""},{from:"c7",to:"c5",promote:""}],
-                     "c6":[{from:"c6",to:"c5",promote:""}],
-                     "c5":[{from:"c5",to:"c4",promote:""}],
-                     "c4":[{from:"c4",to:"c3",promote:""}],
-                     "c3":[{from:"c3",to:"c2",promote:""}],
-                     "c2":[{from:"c2",to:"c1",promote:"q"},{from:"c2",to:"c1",promote:"r"},{from:"c2",to:"c1",promote:"b"},{from:"c2",to:"c1",promote:"n"}],
-                     "d7":[{from:"d7",to:"d6",promote:""},{from:"d7",to:"d5",promote:""}],
-                     "d6":[{from:"d6",to:"d5",promote:""}],
-                     "d5":[{from:"d5",to:"d4",promote:""}],
-                     "d4":[{from:"d4",to:"d3",promote:""}],
-                     "d3":[{from:"d3",to:"d2",promote:""}],
-                     "d2":[{from:"d2",to:"d1",promote:"q"},{from:"d2",to:"d1",promote:"r"},{from:"d2",to:"d1",promote:"b"},{from:"d2",to:"d1",promote:"n"}],
-                     "e7":[{from:"e7",to:"e6",promote:""},{from:"e7",to:"e5",promote:""}],
-                     "e6":[{from:"e6",to:"e5",promote:""}],
-                     "e5":[{from:"e5",to:"e4",promote:""}],
-                     "e4":[{from:"e4",to:"e3",promote:""}],
-                     "e3":[{from:"e3",to:"e2",promote:""}],
-                     "e2":[{from:"e2",to:"e1",promote:"q"},{from:"e2",to:"e1",promote:"r"},{from:"e2",to:"e1",promote:"b"},{from:"e2",to:"e1",promote:"n"}],
-                     "f7":[{from:"f7",to:"f6",promote:""},{from:"f7",to:"f5",promote:""}],
-                     "f6":[{from:"f6",to:"f5",promote:""}],
-                     "f5":[{from:"f5",to:"f4",promote:""}],
-                     "f4":[{from:"f4",to:"f3",promote:""}],
-                     "f3":[{from:"f3",to:"f2",promote:""}],
-                     "f2":[{from:"f2",to:"f1",promote:"q"},{from:"f2",to:"f1",promote:"r"},{from:"f2",to:"f1",promote:"b"},{from:"f2",to:"f1",promote:"n"}],
-                     "g7":[{from:"g7",to:"g6",promote:""},{from:"g7",to:"g5",promote:""}],
-                     "g6":[{from:"g6",to:"g5",promote:""}],
-                     "g5":[{from:"g5",to:"g4",promote:""}],
-                     "g4":[{from:"g4",to:"g3",promote:""}],
-                     "g3":[{from:"g3",to:"g2",promote:""}],
-                     "g2":[{from:"g2",to:"g1",promote:"q"},{from:"g2",to:"g1",promote:"r"},{from:"g2",to:"g1",promote:"b"},{from:"g2",to:"g1",promote:"n"}],
-                     "h7":[{from:"h7",to:"h6",promote:""},{from:"h7",to:"h5",promote:""}],
-                     "h6":[{from:"h6",to:"h5",promote:""}],
-                     "h5":[{from:"h5",to:"h4",promote:""}],
-                     "h4":[{from:"h4",to:"h3",promote:""}],
-                     "h3":[{from:"h3",to:"h2",promote:""}],
-                     "h2":[{from:"h2",to:"h1",promote:"q"},{from:"h2",to:"h1",promote:"r"},{from:"h2",to:"h1",promote:"b"},{from:"h2",to:"h1",promote:"n"}]
+                     48:[{from:48,to:40,promote:""},{from:48,to:32,promote:""}],
+                     40:[{from:40,to:32,promote:""}],
+                     32:[{from:32,to:24,promote:""}],
+                     24:[{from:24,to:16,promote:""}],
+                     16:[{from:16,to:8,promote:""}],
+                     8:[{from:8,to:0,promote:"q"},{from:8,to:0,promote:"r"},{from:8,to:0,promote:"b"},{from:8,to:0,promote:"n"}],
+                     49:[{from:49,to:41,promote:""},{from:49,to:33,promote:""}],
+                     41:[{from:41,to:33,promote:""}],
+                     33:[{from:33,to:25,promote:""}],
+                     25:[{from:25,to:17,promote:""}],
+                     17:[{from:17,to:9,promote:""}],
+                     9:[{from:9,to:1,promote:"q"},{from:9,to:1,promote:"r"},{from:9,to:1,promote:"b"},{from:9,to:1,promote:"n"}],
+                     50:[{from:50,to:42,promote:""},{from:50,to:34,promote:""}],
+                     42:[{from:42,to:34,promote:""}],
+                     34:[{from:34,to:26,promote:""}],
+                     26:[{from:26,to:18,promote:""}],
+                     18:[{from:18,to:10,promote:""}],
+                     10:[{from:10,to:2,promote:"q"},{from:10,to:2,promote:"r"},{from:10,to:2,promote:"b"},{from:10,to:2,promote:"n"}],
+                     51:[{from:51,to:43,promote:""},{from:51,to:35,promote:""}],
+                     43:[{from:43,to:35,promote:""}],
+                     35:[{from:35,to:27,promote:""}],
+                     27:[{from:27,to:19,promote:""}],
+                     19:[{from:19,to:11,promote:""}],
+                     11:[{from:11,to:3,promote:"q"},{from:11,to:3,promote:"r"},{from:11,to:3,promote:"b"},{from:11,to:3,promote:"n"}],
+                     52:[{from:52,to:44,promote:""},{from:52,to:36,promote:""}],
+                     44:[{from:44,to:36,promote:""}],
+                     36:[{from:36,to:28,promote:""}],
+                     28:[{from:28,to:20,promote:""}],
+                     20:[{from:20,to:12,promote:""}],
+                     12:[{from:12,to:4,promote:"q"},{from:12,to:4,promote:"r"},{from:12,to:4,promote:"b"},{from:12,to:4,promote:"n"}],
+                     53:[{from:53,to:45,promote:""},{from:53,to:37,promote:""}],
+                     45:[{from:45,to:37,promote:""}],
+                     37:[{from:37,to:29,promote:""}],
+                     29:[{from:29,to:21,promote:""}],
+                     21:[{from:21,to:13,promote:""}],
+                     13:[{from:13,to:5,promote:"q"},{from:13,to:5,promote:"r"},{from:13,to:5,promote:"b"},{from:13,to:5,promote:"n"}],
+                     54:[{from:54,to:46,promote:""},{from:54,to:38,promote:""}],
+                     46:[{from:46,to:38,promote:""}],
+                     38:[{from:38,to:30,promote:""}],
+                     30:[{from:30,to:22,promote:""}],
+                     22:[{from:22,to:14,promote:""}],
+                     14:[{from:14,to:6,promote:"q"},{from:14,to:6,promote:"r"},{from:14,to:6,promote:"b"},{from:14,to:6,promote:"n"}],
+                     55:[{from:55,to:47,promote:""},{from:55,to:39,promote:""}],
+                     47:[{from:47,to:39,promote:""}],
+                     39:[{from:39,to:31,promote:""}],
+                     31:[{from:31,to:23,promote:""}],
+                     23:[{from:23,to:15,promote:""}],
+                     15:[{from:15,to:7,promote:"q"},{from:15,to:7,promote:"r"},{from:15,to:7,promote:"b"},{from:15,to:7,promote:"n"}]
                    };
     blackpawncaptures={
-                        "a7":[{from:"a7",to:"b6",promote:""}],
-                        "a6":[{from:"a6",to:"b5",promote:""}],
-                        "a5":[{from:"a5",to:"b4",promote:""}],
-                        "a4":[{from:"a4",to:"b3",promote:""}],
-                        "a3":[{from:"a3",to:"b2",promote:""}],
-                        "a2":[{from:"a2",to:"b1",promote:"q"},{from:"a2",to:"b1",promote:"r"},{from:"a2",to:"b1",promote:"b"},{from:"a2",to:"b1",promote:"n"}],
-                        "b7":[{from:"b7",to:"a6",promote:""},{from:"b7",to:"c6",promote:""}],
-                        "b6":[{from:"b6",to:"a5",promote:""},{from:"b6",to:"c5",promote:""}],
-                        "b5":[{from:"b5",to:"a4",promote:""},{from:"b5",to:"c4",promote:""}],
-                        "b4":[{from:"b4",to:"a3",promote:""},{from:"b4",to:"c3",promote:""}],
-                        "b3":[{from:"b3",to:"a2",promote:""},{from:"b3",to:"c2",promote:""}],
-                        "b2":[{from:"b2",to:"a1",promote:"q"},{from:"b2",to:"a1",promote:"r"},{from:"b2",to:"a1",promote:"b"},{from:"b2",to:"a1",promote:"n"},
-                              {from:"b2",to:"c1",promote:"q"},{from:"b2",to:"c1",promote:"r"},{from:"b2",to:"c1",promote:"b"},{from:"b2",to:"c1",promote:"n"}],
-                        "c7":[{from:"c7",to:"b6",promote:""},{from:"c7",to:"d6",promote:""}],
-                        "c6":[{from:"c6",to:"b5",promote:""},{from:"c6",to:"d5",promote:""}],
-                        "c5":[{from:"c5",to:"b4",promote:""},{from:"c5",to:"d4",promote:""}],
-                        "c4":[{from:"c4",to:"b3",promote:""},{from:"c4",to:"d3",promote:""}],
-                        "c3":[{from:"c3",to:"b2",promote:""},{from:"c3",to:"d2",promote:""}],
-                        "c2":[{from:"c2",to:"b1",promote:"q"},{from:"c2",to:"b1",promote:"r"},{from:"c2",to:"b1",promote:"b"},{from:"c2",to:"b1",promote:"n"},
-                              {from:"c2",to:"d1",promote:"q"},{from:"c2",to:"d1",promote:"r"},{from:"c2",to:"d1",promote:"b"},{from:"c2",to:"d1",promote:"n"}],
-                        "d7":[{from:"d7",to:"c6",promote:""},{from:"d7",to:"e6",promote:""}],
-                        "d6":[{from:"d6",to:"c5",promote:""},{from:"d6",to:"e5",promote:""}],
-                        "d5":[{from:"d5",to:"c4",promote:""},{from:"d5",to:"e4",promote:""}],
-                        "d4":[{from:"d4",to:"c3",promote:""},{from:"d4",to:"e3",promote:""}],
-                        "d3":[{from:"d3",to:"c2",promote:""},{from:"d3",to:"e2",promote:""}],
-                        "d2":[{from:"d2",to:"c1",promote:"q"},{from:"d2",to:"c1",promote:"r"},{from:"d2",to:"c1",promote:"b"},{from:"d2",to:"c1",promote:"n"},
-                              {from:"d2",to:"e1",promote:"q"},{from:"d2",to:"e1",promote:"r"},{from:"d2",to:"e1",promote:"b"},{from:"d2",to:"e1",promote:"n"}],
-                        "e7":[{from:"e7",to:"d6",promote:""},{from:"e7",to:"f6",promote:""}],
-                        "e6":[{from:"e6",to:"d5",promote:""},{from:"e6",to:"f5",promote:""}],
-                        "e5":[{from:"e5",to:"d4",promote:""},{from:"e5",to:"f4",promote:""}],
-                        "e4":[{from:"e4",to:"d3",promote:""},{from:"e4",to:"f3",promote:""}],
-                        "e3":[{from:"e3",to:"d2",promote:""},{from:"e3",to:"f2",promote:""}],
-                        "e2":[{from:"e2",to:"d1",promote:"q"},{from:"e2",to:"d1",promote:"r"},{from:"e2",to:"d1",promote:"b"},{from:"e2",to:"d1",promote:"n"},
-                              {from:"e2",to:"f1",promote:"q"},{from:"e2",to:"f1",promote:"r"},{from:"e2",to:"f1",promote:"b"},{from:"e2",to:"f1",promote:"n"}],
-                        "f7":[{from:"f7",to:"e6",promote:""},{from:"f7",to:"g6",promote:""}],
-                        "f6":[{from:"f6",to:"e5",promote:""},{from:"f6",to:"g5",promote:""}],
-                        "f5":[{from:"f5",to:"e4",promote:""},{from:"f5",to:"g4",promote:""}],
-                        "f4":[{from:"f4",to:"e3",promote:""},{from:"f4",to:"g3",promote:""}],
-                        "f3":[{from:"f3",to:"e2",promote:""},{from:"f3",to:"g2",promote:""}],
-                        "f2":[{from:"f2",to:"e1",promote:"q"},{from:"f2",to:"e1",promote:"r"},{from:"f2",to:"e1",promote:"b"},{from:"f2",to:"e1",promote:"n"},
-                              {from:"f2",to:"g1",promote:"q"},{from:"f2",to:"g1",promote:"r"},{from:"f2",to:"g1",promote:"b"},{from:"f2",to:"g1",promote:"n"}],
-                        "g7":[{from:"g7",to:"f6",promote:""},{from:"g7",to:"h6",promote:""}],
-                        "g6":[{from:"g6",to:"f5",promote:""},{from:"g6",to:"h5",promote:""}],
-                        "g5":[{from:"g5",to:"f4",promote:""},{from:"g5",to:"h4",promote:""}],
-                        "g4":[{from:"g4",to:"f3",promote:""},{from:"g4",to:"h3",promote:""}],
-                        "g3":[{from:"g3",to:"f2",promote:""},{from:"g3",to:"h2",promote:""}],
-                        "g2":[{from:"g2",to:"f1",promote:"q"},{from:"g2",to:"f1",promote:"r"},{from:"g2",to:"f1",promote:"b"},{from:"g2",to:"f1",promote:"n"},
-                              {from:"g2",to:"h1",promote:"q"},{from:"g2",to:"h1",promote:"r"},{from:"g2",to:"h1",promote:"b"},{from:"g2",to:"h1",promote:"n"}],
-                        "h7":[{from:"h7",to:"g6",promote:""}],
-                        "h6":[{from:"h6",to:"g5",promote:""}],
-                        "h5":[{from:"h5",to:"g4",promote:""}],
-                        "h4":[{from:"h4",to:"g3",promote:""}],
-                        "h3":[{from:"h3",to:"g2",promote:""}],
-                        "h2":[{from:"h2",to:"g1",promote:"q"},{from:"h2",to:"g1",promote:"r"},{from:"h2",to:"g1",promote:"b"},{from:"h2",to:"g1",promote:"n"}]
+                        48:[{from:48,to:41,promote:""}],
+                        40:[{from:40,to:33,promote:""}],
+                        32:[{from:32,to:25,promote:""}],
+                        24:[{from:24,to:17,promote:""}],
+                        16:[{from:16,to:9,promote:""}],
+                        8:[{from:8,to:1,promote:"q"},{from:8,to:1,promote:"r"},{from:8,to:1,promote:"b"},{from:8,to:1,promote:"n"}],
+                        49:[{from:49,to:40,promote:""},{from:49,to:42,promote:""}],
+                        41:[{from:41,to:32,promote:""},{from:41,to:34,promote:""}],
+                        33:[{from:33,to:24,promote:""},{from:33,to:26,promote:""}],
+                        25:[{from:25,to:16,promote:""},{from:25,to:18,promote:""}],
+                        17:[{from:17,to:8,promote:""},{from:17,to:10,promote:""}],
+                        9:[{from:9,to:0,promote:"q"},{from:9,to:0,promote:"r"},{from:9,to:0,promote:"b"},{from:9,to:0,promote:"n"},
+                              {from:9,to:2,promote:"q"},{from:9,to:2,promote:"r"},{from:9,to:2,promote:"b"},{from:9,to:2,promote:"n"}],
+                        50:[{from:50,to:41,promote:""},{from:50,to:43,promote:""}],
+                        42:[{from:42,to:33,promote:""},{from:42,to:35,promote:""}],
+                        34:[{from:34,to:25,promote:""},{from:34,to:27,promote:""}],
+                        26:[{from:26,to:17,promote:""},{from:26,to:19,promote:""}],
+                        18:[{from:18,to:9,promote:""},{from:18,to:11,promote:""}],
+                        10:[{from:10,to:1,promote:"q"},{from:10,to:1,promote:"r"},{from:10,to:1,promote:"b"},{from:10,to:1,promote:"n"},
+                              {from:10,to:3,promote:"q"},{from:10,to:3,promote:"r"},{from:10,to:3,promote:"b"},{from:10,to:3,promote:"n"}],
+                        51:[{from:51,to:42,promote:""},{from:51,to:44,promote:""}],
+                        43:[{from:43,to:34,promote:""},{from:43,to:36,promote:""}],
+                        35:[{from:35,to:26,promote:""},{from:35,to:28,promote:""}],
+                        27:[{from:27,to:18,promote:""},{from:27,to:20,promote:""}],
+                        19:[{from:19,to:10,promote:""},{from:19,to:12,promote:""}],
+                        11:[{from:11,to:2,promote:"q"},{from:11,to:2,promote:"r"},{from:11,to:2,promote:"b"},{from:11,to:2,promote:"n"},
+                              {from:11,to:4,promote:"q"},{from:11,to:4,promote:"r"},{from:11,to:4,promote:"b"},{from:11,to:4,promote:"n"}],
+                        52:[{from:52,to:43,promote:""},{from:52,to:45,promote:""}],
+                        44:[{from:44,to:35,promote:""},{from:44,to:37,promote:""}],
+                        36:[{from:36,to:27,promote:""},{from:36,to:29,promote:""}],
+                        28:[{from:28,to:19,promote:""},{from:28,to:21,promote:""}],
+                        20:[{from:20,to:11,promote:""},{from:20,to:13,promote:""}],
+                        12:[{from:12,to:3,promote:"q"},{from:12,to:3,promote:"r"},{from:12,to:3,promote:"b"},{from:12,to:3,promote:"n"},
+                              {from:12,to:5,promote:"q"},{from:12,to:5,promote:"r"},{from:12,to:5,promote:"b"},{from:12,to:5,promote:"n"}],
+                        53:[{from:53,to:44,promote:""},{from:53,to:46,promote:""}],
+                        45:[{from:45,to:36,promote:""},{from:45,to:38,promote:""}],
+                        37:[{from:37,to:28,promote:""},{from:37,to:30,promote:""}],
+                        29:[{from:29,to:20,promote:""},{from:29,to:22,promote:""}],
+                        21:[{from:21,to:12,promote:""},{from:21,to:14,promote:""}],
+                        13:[{from:13,to:4,promote:"q"},{from:13,to:4,promote:"r"},{from:13,to:4,promote:"b"},{from:13,to:4,promote:"n"},
+                              {from:13,to:6,promote:"q"},{from:13,to:6,promote:"r"},{from:13,to:6,promote:"b"},{from:13,to:6,promote:"n"}],
+                        54:[{from:54,to:45,promote:""},{from:54,to:47,promote:""}],
+                        46:[{from:46,to:37,promote:""},{from:46,to:39,promote:""}],
+                        38:[{from:38,to:29,promote:""},{from:38,to:31,promote:""}],
+                        30:[{from:30,to:21,promote:""},{from:30,to:23,promote:""}],
+                        22:[{from:22,to:13,promote:""},{from:22,to:15,promote:""}],
+                        14:[{from:14,to:5,promote:"q"},{from:14,to:5,promote:"r"},{from:14,to:5,promote:"b"},{from:14,to:5,promote:"n"},
+                              {from:14,to:7,promote:"q"},{from:14,to:7,promote:"r"},{from:14,to:7,promote:"b"},{from:14,to:7,promote:"n"}],
+                        55:[{from:55,to:46,promote:""}],
+                        47:[{from:47,to:38,promote:""}],
+                        39:[{from:39,to:30,promote:""}],
+                        31:[{from:31,to:22,promote:""}],
+                        23:[{from:23,to:14,promote:""}],
+                        15:[{from:15,to:6,promote:"q"},{from:15,to:6,promote:"r"},{from:15,to:6,promote:"b"},{from:15,to:6,promote:"n"}]
                       };
 
-    validmoves=blackpawncaptures[element].filter(function(value){if(board[value.to]!=" " && board[value.to]==board[value.to].toUpperCase()) return true; else return false; });
+    validmoves=blackpawncaptures[element].filter(function(value){if(board.pos[value.to]!=" " && board.pos[value.to]==board.pos[value.to].toUpperCase()) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
-    validmoves=blackpawnmoves[element].filter(function(value){if(board[value.to]==" ") return true; else return false; });
+    validmoves=blackpawnmoves[element].filter(function(value){if(board.pos[value.to]==" ") return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
 }
 
@@ -560,29 +598,59 @@ function GenerateMoveList(board,squares,squareindex,knightmoves)
 /*
  *   Make Move
  *
- *   TODO: Castling, En Passant
+ *   TODO: En Passant
  */
 function MakeMove(board,move)
 {
-    var rv = JSON.parse(JSON.stringify(board));
-    var piecetype = { "K":"wk", "Q":"wq", "R":"wr", "B":"wb", "N":"wn", "P":"wp",
-                      "k":"bk", "q":"bq", "r":"br", "b":"bb", "n":"bn", "p":"bp" };
+    var rv = CopyBoard(board);
+    var piecetype = GetPieceTypes();
 
 // Remove any captured piece
-    if(board[move.to]!=" ") {
-        rv[piecetype[board[move.to]]]=rv[piecetype[board[move.to]]].filter(function(value){if(value==move.to) { return false; } else { return true; }});
+    if(board.pos[move.to]!=" ") {
+        rv[piecetype[board.pos[move.to]]]=rv[piecetype[board.pos[move.to]]].filter(function(value){if(value==move.to) { return false; } else { return true; }});
     }
 // Place moved/promoted piece on final square
     if(move.promote=="") {
-        rv[piecetype[board[move.from]]].push(move.to);
-        rv[move.to]=board[move.from];
+        rv[piecetype[board.pos[move.from]]].push(move.to);
+        rv.pos[move.to]=board.pos[move.from];
     } else {
         rv[piecetype[move.promote]].push(move.to);
-        rv[move.to]=move.promote;
+        rv.pos[move.to]=move.promote;
     }
 // Remove moved/promoted piece from original square
-    rv[piecetype[board[move.from]]]=rv[piecetype[board[move.from]]].filter(function(value){if(value==move.from) { return false; } else { return true; }});
-    rv[move.from]=" ";
+    rv[piecetype[board.pos[move.from]]]=rv[piecetype[board.pos[move.from]]].filter(function(value){if(value==move.from) { return false; } else { return true; }});
+    rv.pos[move.from]=" ";
+
+    if(move.from==4 && move.to==2 && board.pos[4]=="K") {
+        rv.wr.push(3);
+        rv.pos[3]="R";
+        rv.wr=rv.wr.filter(function(value){if(value==0) { return false; } else { return true; }});
+        rv.pos[0]=" ";   
+    }
+    if(move.from==4 && move.to==6 && board.pos[4]=="K") {
+        rv.wr.push(5);
+        rv.pos[5]="R";
+        rv.wr=rv.wr.filter(function(value){if(value==7) { return false; } else { return true; }});
+        rv.pos[7]=" ";   
+    }
+    if(move.from==60 && move.to==58 && board.pos[60]=="k") {
+        rv.br.push(59);
+        rv.pos[59]="R";
+        rv.br=rv.br.filter(function(value){if(value==56) { return false; } else { return true; }});
+        rv.pos[56]=" ";   
+    }
+    if(move.from==60 && move.to==62 && board.pos[60]=="k") {
+        rv.br.push(61);
+        rv.pos[61]="R";
+        rv.br=rv.br.filter(function(value){if(value==63) { return false; } else { return true; }});
+        rv.pos[63]=" ";   
+    }
+
+    if(move.from==0 || move.from==4) { rv.wqc=false; }
+    if(move.from==4 || move.from==7) { rv.wkc=false; }
+    if(move.from==56 || move.from==60) { rv.bqc=false; }
+    if(move.from==60 || move.from==63) { rv.bkc=false; }
+
 // Flip side to move
     if(isWhiteToMove(board)) {
         rv.tomove="B";
@@ -612,9 +680,7 @@ function AlfaBeta(board,ply,alfa,beta,squares,squareindex,knightmoves)
         if(ply==0) {
             return Evaluation(board,movelist.length,squares,squareindex,knightmoves);
         } else {
-            // Make each move, decrease ply and call AlfaBeta again. Add returned evaluation to movelist
             for(var i=0;i<movelist.length;i++) {
-                newboard={};
                 newboard=MakeMove(board,movelist[i]);
                 alfa=Math.max(alfa,-AlfaBeta(newboard,ply-1,-beta,-alfa,squares,squareindex,knightmoves));
                 if(alfa>=beta) { break; }
@@ -631,7 +697,7 @@ function Search(board,evaluatedmovelist,maxply,t0,squares,squareindex,knightmove
     var t1;
     var elapsed=0;
 
-    for(var i=0;i<evaluatedmovelist.length && elapsed<9000;i++) {
+    for(var i=0;i<evaluatedmovelist.length && elapsed<3000;i++) {
         newboard=MakeMove(board,evaluatedmovelist[i]);
         evaluatedmovelist[i].eval = -AlfaBeta(newboard, maxply, -besteval, Infinity, squares, squareindex, knightmoves);
         besteval=Math.max(evaluatedmovelist[i].eval,besteval);
@@ -660,7 +726,7 @@ function IncrementalSearch(board,maxdepth,squares,squareindex,knightmoves)
     } else {
         t0 = process.hrtime();
     }
-    for(var maxply=1;maxply<maxdepth && elapsed<3000;maxply+=2) {
+    for(var maxply=1;maxply<maxdepth && evaluatedmovelist.length>1 && elapsed<3000;maxply+=2) {
         evalmovelist = Search(board,evaluatedmovelist,maxply,t0,squares,squareindex,knightmoves);
         evaluatedmovelist = evalmovelist.sort(function(a,b) { return b.eval-a.eval; });
         if(maxply==1 && evaluatedmovelist[0].eval < -25000) { break; }
@@ -743,7 +809,7 @@ function userclick(id)
     } else {
       var board = JSON.parse(sessionStorage.getItem("board"));
       var movelist = GenerateMoveList(board,squares,squareindex,knightmoves);
-      var move = { from:selected,to:id,promote:"" };
+      var move = { from:GetSquareIndex(selected,squareindex),to:GetSquareIndex(id,squareindex),promote:"" };
       if(isObjectInList(move,movelist)) {
         var newboard = MakeMove(board,move);
         sessionStorage.removeItem("selected");
@@ -751,7 +817,7 @@ function userclick(id)
         sessionStorage.setItem("board", JSON.stringify(newboard));
         document.getElementById("status").innerHTML="Thinking...";
         UpdateHTMLBoard();
-        setTimeout('AIMakeMove()',100);
+        setTimeout('AIMakeMove()',1000);
       } else {
         sessionStorage.removeItem("selected");
       }
@@ -761,12 +827,8 @@ function userclick(id)
 
 function AIMakeMove()
 {
-    var piecetype = { "K":"wk", "Q":"wq", "R":"wr", "B":"wb", "N":"wn", "P":"wp",
-                      "k":"bk", "q":"bq", "r":"br", "b":"bb", "n":"bn", "p":"bp" };
-
+    var piecetype = GetPieceTypes();
     var board = JSON.parse(sessionStorage.getItem("board"));
-
-    
     var squares = GenerateSquares();
     var squareindex = GenerateSquareIndex();
     var knightmoves = GenerateKnightMoves(squares);
@@ -776,7 +838,7 @@ function AIMakeMove()
 
     if(bookmove.from != bookmove.to)
     {
-        document.getElementById("status").innerHTML="My move: " + bookmove.from+bookmove.to + " (book, 0)";
+        document.getElementById("status").innerHTML="My move: " + squares[bookmove.from] + squares[bookmove.to] + " (book, 0)";
         newboard = MakeMove(board,bookmove);
         sessionStorage.removeItem("board");
         sessionStorage.setItem("board", JSON.stringify(newboard));
@@ -784,10 +846,10 @@ function AIMakeMove()
         if(movelist.length > 0)
         {
             var evaluatedmovelist = IncrementalSearch(board,6,squares,squareindex,knightmoves);
-            if(eval < -25000) { 
+            if(evaluatedmovelist[0].eval < -25000) { 
                 document.getElementById("status").innerHTML="I resign"; 
             } else {
-                document.getElementById("status").innerHTML="My move: " + evaluatedmovelist[0].from+evaluatedmovelist[0].to + " (" + evaluatedmovelist[0].eval + ", " + nodes + ")";
+                document.getElementById("status").innerHTML="My move: " + squares[evaluatedmovelist[0].from]+squares[evaluatedmovelist[0].to] + " (" + evaluatedmovelist[0].eval + ", " + nodes + ")";
                 newboard = MakeMove(board,evaluatedmovelist[0]);
                 sessionStorage.removeItem("board");
                 sessionStorage.setItem("board", JSON.stringify(newboard));
@@ -801,10 +863,7 @@ function AIMakeMove()
 function UpdateHTMLBoard()
 {
     var squares=GenerateSquares();
-    var piecetype = { "K":"wk", "Q":"wq", "R":"wr", "B":"wb", "N":"wn", "P":"wp",
-                      "k":"bk", "q":"bq", "r":"br", "b":"bb", "n":"bn", "p":"bp",
-                      " ":""
-                    };
+    var piecetype = GetPieceTypes();
     var board = JSON.parse(sessionStorage.getItem("board"));
     var selected = sessionStorage.getItem("selected");
     var s="";
@@ -815,12 +874,20 @@ function UpdateHTMLBoard()
             s="s";            
         }
         if((Math.floor(i/8)+(i%8))%2==0) {
-            document.getElementById(squares[i]).src="b" + piecetype[board[squares[i]]] + s + ".bmp";
+            document.getElementById(squares[i]).src="b" + piecetype[board.pos[i]] + s + ".bmp";
         } else {
-            document.getElementById(squares[i]).src="w" + piecetype[board[squares[i]]] + s + ".bmp";
+            document.getElementById(squares[i]).src="w" + piecetype[board.pos[i]] + s + ".bmp";
         }
     }
 }
+
+// This method from http://stackoverflow.com/questions/11582512/how-to-get-url-parameters-with-javascript/11582513#11582513
+// Thanks to author and stackoverflow user: David Morales
+// Thanks to stackoverflow user Teetrinker to link me to this solution.
+function getURLParameter(name) {
+  return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+}
+
 
 
 function InitializeGUI()
@@ -835,25 +902,156 @@ function InitializeGUI()
 
 function PrintBoard(board)
 {
-    console.log(board["a8"] + board["b8"] + board["c8"] + board["d8"] + board["e8"] + board["f8"] + board["g8"] + board["h8"]);
-    console.log(board["a7"] + board["b7"] + board["c7"] + board["d7"] + board["e7"] + board["f7"] + board["g7"] + board["h7"]);
-    console.log(board["a6"] + board["b6"] + board["c6"] + board["d6"] + board["e6"] + board["f6"] + board["g6"] + board["h6"]);
-    console.log(board["a5"] + board["b5"] + board["c5"] + board["d5"] + board["e5"] + board["f5"] + board["g5"] + board["h5"]);
-    console.log(board["a4"] + board["b4"] + board["c4"] + board["d4"] + board["e4"] + board["f4"] + board["g4"] + board["h4"]);
-    console.log(board["a3"] + board["b3"] + board["c3"] + board["d3"] + board["e3"] + board["f3"] + board["g3"] + board["h3"]);
-    console.log(board["a2"] + board["b2"] + board["c2"] + board["d2"] + board["e2"] + board["f2"] + board["g2"] + board["h2"]);
-    console.log(board["a1"] + board["b1"] + board["c1"] + board["d1"] + board["e1"] + board["f1"] + board["g1"] + board["h1"]);
+    console.log(board.pos[56] + board.pos[57] + board.pos[58] + board.pos[59] + board.pos[60] + board.pos[61] + board.pos[62] + board.pos[63]);
+    console.log(board.pos[48] + board.pos[49] + board.pos[50] + board.pos[51] + board.pos[52] + board.pos[53] + board.pos[54] + board.pos[55]);
+    console.log(board.pos[40] + board.pos[41] + board.pos[42] + board.pos[43] + board.pos[44] + board.pos[45] + board.pos[46] + board.pos[47]);
+    console.log(board.pos[32] + board.pos[33] + board.pos[34] + board.pos[35] + board.pos[36] + board.pos[37] + board.pos[38] + board.pos[39]);
+    console.log(board.pos[24] + board.pos[25] + board.pos[26] + board.pos[27] + board.pos[28] + board.pos[29] + board.pos[30] + board.pos[31]);
+    console.log(board.pos[16] + board.pos[17] + board.pos[18] + board.pos[19] + board.pos[20] + board.pos[21] + board.pos[22] + board.pos[23]);
+    console.log(board.pos[8] + board.pos[9] + board.pos[10] + board.pos[11] + board.pos[12] + board.pos[13] + board.pos[14] + board.pos[15]);
+    console.log(board.pos[0] + board.pos[1] + board.pos[2] + board.pos[3] + board.pos[4] + board.pos[5] + board.pos[6] + board.pos[7]);
 }
 
 function PrintMoveList(movelist)
 {
     for(var i=0;i<movelist.length;i++) 
     {
-        console.log(movelist[i].from + movelist[i].to + movelist[i].promote + " " + movelist[i].eval);
+        console.log(squares[movelist[i].from] + squares[movelist[i].to] + movelist[i].promote + " " + movelist[i].eval);
     }
 }
 
+// Explaination of FEN: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+// Example FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+function GetBoardFromFEN(fen)
+{
+    var rv=GetEmptyPosition();
+    for(var i=0,y=7,x=0;i<fen.length && y>=0;i++) {
+        switch(fen[i]) {
+            case "K":
+                rv.wk.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "Q":
+                rv.wq.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "R":
+                rv.wr.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "B":
+                rv.wb.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "N":
+                rv.wn.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "P":
+                rv.wp.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "k":
+                rv.bk.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "q":
+                rv.bq.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "r":
+                rv.br.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "b":
+                rv.bb.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "n":
+                rv.bn.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "p":
+                rv.bp.push(y*8+x);
+                rv.pos[y*8+x]=fen[i];
+                break;
+            case "/":
+                    y--;
+                    x=-1;
+                break;;
+            case "8":
+            case "7":
+            case "6":
+            case "5":
+            case "4":
+            case "3":
+            case "2":
+            case "1":
+                x=parseFloat(x)+parseFloat(fen[i])-1;
+                break;
+            default:
+                y=-1;
+                break;
+        }
+        x++;
+console.log(x);
+    }
+    x=-1;
+    y=-1;
+    while(i<fen.length) {
+        switch(fen[i]) {
+            case " ": break;
+            case "w": rv.tomove="W"; break;
+            case "b": rv.tomove="B"; break;
+            case "K": rv.wkc=true; break;
+            case "Q": rv.wqc=true; break;
+            case "k": rv.bkc=true; break;
+            case "q": rv.bqc=true; break;
+            case "a": x=0; break;
+            case "b": x=1; break;
+            case "c": x=2; break;
+            case "d": x=3; break;
+            case "e": x=4; break;
+            case "f": x=5; break;
+            case "g": x=6; break;
+            case "h": x=7; break;
+            case "6": y=5; break;
+            case "3": y=2; break;
+        }
+        i++;
+    }
+    if(x>-1 && y>-1) passant=y*8+x;
+    return rv;
+}
 
+
+function CopyBoard(board)
+{
+    var rv=GetEmptyPosition();
+    var i=0;
+    for(i=0; i<64;i++) { rv.pos[i]=board.pos[i]; }
+    rv.wkc=board.wkc;
+    rv.wqc=board.wqc;
+    rv.bkc=board.bkc;
+    rv.bqc=board.bqc;
+    rv.passant=board.passant;
+    rv.tomove=board.tomove;
+    rv.movenumber=board.movenumber;
+    rv.drawcounter=board.drawcounter;
+    for(i=0;i<board.wk.length;i++) { rv.wk.push(board.wk[i]); }
+    for(i=0;i<board.wq.length;i++) { rv.wq.push(board.wq[i]); }
+    for(i=0;i<board.wr.length;i++) { rv.wr.push(board.wr[i]); }
+    for(i=0;i<board.wb.length;i++) { rv.wb.push(board.wb[i]); }
+    for(i=0;i<board.wn.length;i++) { rv.wn.push(board.wn[i]); }
+    for(i=0;i<board.wp.length;i++) { rv.wp.push(board.wp[i]); }
+    for(i=0;i<board.bk.length;i++) { rv.bk.push(board.bk[i]); }
+    for(i=0;i<board.bq.length;i++) { rv.bq.push(board.bq[i]); }
+    for(i=0;i<board.br.length;i++) { rv.br.push(board.br[i]); }
+    for(i=0;i<board.bb.length;i++) { rv.bb.push(board.bb[i]); }
+    for(i=0;i<board.bn.length;i++) { rv.bn.push(board.bn[i]); }
+    for(i=0;i<board.bp.length;i++) { rv.bp.push(board.bp[i]); }
+    return rv;
+}
 
 /*
  *   MAIN
@@ -863,36 +1061,44 @@ function main()
 {
     var squares = GenerateSquares();
     var squareindex = GenerateSquareIndex();
-    var knightmoves = GenerateKnightMoves(squares);
+    var knightmoves = GenerateKnightMoves();
     var evalmovelist = [];
 
-    var initialboard = {
-                         a1:"R",a2:"P",a3:" ",a4:" ",a5:" ",a6:" ",a7:"p",a8:"r",
-                         b1:"N",b2:"P",b3:" ",b4:" ",b5:" ",b6:" ",b7:"p",b8:"n",
-                         c1:"B",c2:"P",c3:" ",c4:" ",c5:" ",c6:" ",c7:"p",c8:"b",
-                         d1:"Q",d2:"P",d3:" ",d4:" ",d5:" ",d6:" ",d7:"p",d8:"q",
-                         e1:"K",e2:"P",e3:" ",e4:" ",e5:" ",e6:" ",e7:"p",e8:"k",
-                         f1:"B",f2:"P",f3:" ",f4:" ",f5:" ",f6:" ",f7:"p",f8:"b",
-                         g1:"N",g2:"P",g3:" ",g4:" ",g5:" ",g6:" ",g7:"p",g8:"n",
-                         h1:"R",h2:"P",h3:" ",h4:" ",h5:" ",h6:" ",h7:"p",h8:"r",
-                         wkc:true, wqc:true, bkc:true, bqc:true, passant:"",tomove:"W",
-                         movenumber:1,drawcounter:0,
-                         wk:["e1"],
-                         wq:["d1"],
-                         wr:["a1","h1"],
-                         wb:["c1","f1"],
-                         wn:["b1","g1"],
-                         wp:["a2","b2","c2","d2","e2","f2","g2","h2"],
-                         bk:["e8"],
-                         bq:["d8"],
-                         br:["a8","h8"],
-                         bb:["c8","f8"],
-                         bn:["b8","g8"],
-                         bp:["a7","b7","c7","d7","e7","f7","g7","h7"]
-                       }
-
-    var board = JSON.parse(JSON.stringify(initialboard));
+    var initialboard = 
+    {
+        pos:["R", "N", "B", "Q", "K", "B", "N", "R",
+             "P", "P", "P", "P", "P", "P", "P", "P",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             " ", " ", " ", " ", " ", " ", " ", " ",
+             "p", "p", "p", "p", "p", "p", "p", "p",
+             "r", "n", "b", "q", "k", "b", "n", "r"
+            ],
+        wkc:true, wqc:true, bkc:true, bqc:true, 
+        passant:-1,tomove:"W",
+        movenumber:1,drawcounter:0,
+        wk:[4],
+        wq:[3],
+        wr:[0,7],
+        wb:[2,5],
+        wn:[1,6],
+        wp:[8,9,10,11,12,13,14,15],
+        bk:[60],
+        bq:[59],
+        br:[56,63],
+        bb:[58,61],
+        bn:[57,62],
+        bp:[48,49,50,51,52,53,54,55]
+    };
+    var parameter = "";
+//    var board = JSON.parse(JSON.stringify(initialboard));
+    var board = CopyBoard(initialboard);
     if (typeof sessionStorage != 'undefined') {
+        parameter=getURLParameter("fen");
+        if(parameter!="" && parameter!=undefined) {
+            board=GetBoardFromFEN(parameter);
+        }
         sessionStorage.clear();
         sessionStorage.setItem("board",JSON.stringify(board));
     } else {
