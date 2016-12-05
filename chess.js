@@ -435,7 +435,7 @@ function AddWhitePawnMovesToMoveList(element,board,movelist)
                       };
     validmoves=whitepawncaptures[element].filter(function(value){if(board.pos[value.to]!=" " && board.pos[value.to]==board.pos[value.to].toLowerCase()) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
-    validmoves=whitepawnmoves[element].filter(function(value){if(board.pos[value.to]==" ") return true; else return false; });
+    validmoves=whitepawnmoves[element].filter(function(value){if(board.pos[value.to]==" " && (value.to-value.from==8 || board.pos[value.from+8]==" ")) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
 }
 
@@ -554,7 +554,7 @@ function AddBlackPawnMovesToMoveList(element,board,movelist)
 
     validmoves=blackpawncaptures[element].filter(function(value){if(board.pos[value.to]!=" " && board.pos[value.to]==board.pos[value.to].toUpperCase()) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
-    validmoves=blackpawnmoves[element].filter(function(value){if(board.pos[value.to]==" ") return true; else return false; });
+    validmoves=blackpawnmoves[element].filter(function(value){if(board.pos[value.to]==" " && (value.from-value.to==8 || board.pos[value.from-8]==" ")) return true; else return false; });
     if(validmoves!=undefined) Array.prototype.push.apply(movelist,validmoves);
 }
 
@@ -1102,7 +1102,6 @@ function main()
         bp:[48,49,50,51,52,53,54,55]
     };
     var parameter = "";
-//    var board = JSON.parse(JSON.stringify(initialboard));
     var board = CopyBoard(initialboard);
     if (typeof sessionStorage != 'undefined') {
         parameter=getURLParameter("fen");
