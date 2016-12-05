@@ -568,7 +568,7 @@ function GenerateMoveList(board,squares,squareindex,knightmoves)
     var movelist = [];
 
     if(isWhiteToMove(board)) {
-        if(board.wk.length>0) {
+        if(board.wk.length>0 && board.drawcounter<100) {
             board.wp.forEach(function(element,index,array) { AddWhitePawnMovesToMoveList(element,board,movelist); });
             board.wn.forEach(function(element,index,array) { AddKnightMovesToMoveList(element,board,movelist,knightmoves); });
             board.wb.forEach(function(element,index,array) { AddBishopMovesToMoveList(element,board,squares,squareindex,movelist); });
@@ -577,7 +577,7 @@ function GenerateMoveList(board,squares,squareindex,knightmoves)
             board.wk.forEach(function(element,index,array) { AddKingMovesToMoveList(element,board,squares,squareindex,movelist); });
         }
     } else {
-        if(board.bk.length>0) {
+        if(board.bk.length>0 && board.drawcounter<100) {
             board.bp.forEach(function(element,index,array) { AddBlackPawnMovesToMoveList(element,board,movelist); });
             board.bn.forEach(function(element,index,array) { AddKnightMovesToMoveList(element,board,movelist,knightmoves); });
             board.bb.forEach(function(element,index,array) { AddBishopMovesToMoveList(element,board,squares,squareindex,movelist); });
@@ -605,9 +605,12 @@ function MakeMove(board,move)
     var rv = CopyBoard(board);
     var piecetype = GetPieceTypes();
 
+    rv.drawcounter=board.drawcounter+1;
+    if(board.pos[move.from]=='P' || board.pos[move.from]=='p') rv.drawcounter=0;
 // Remove any captured piece
     if(board.pos[move.to]!=" ") {
         rv[piecetype[board.pos[move.to]]]=rv[piecetype[board.pos[move.to]]].filter(function(value){if(value==move.to) { return false; } else { return true; }});
+        rv.drawcounter=0;
     }
 // Place moved/promoted piece on final square
     if(move.promote=="") {
@@ -617,6 +620,7 @@ function MakeMove(board,move)
         rv[piecetype[move.promote]].push(move.to);
         rv.pos[move.to]=move.promote;
     }
+
 // Remove moved/promoted piece from original square
     rv[piecetype[board.pos[move.from]]]=rv[piecetype[board.pos[move.from]]].filter(function(value){if(value==move.from) { return false; } else { return true; }});
     rv.pos[move.from]=" ";
@@ -773,6 +777,7 @@ function Evaluation(board,moves,squares,squareindex,knightmoves)
  */
 function EndOfGameEvaluation(board,ply)
 {
+    if(board.drawcounter>99) return 0;
     return -25600-ply; // Draw or Loss? Is King in Check? We assume it is always a loss here
 }
 
@@ -810,8 +815,13 @@ function userclick(id)
       var board = JSON.parse(sessionStorage.getItem("board"));
       var movelist = GenerateMoveList(board,squares,squareindex,knightmoves);
       var move = { from:GetSquareIndex(selected,squareindex),to:GetSquareIndex(id,squareindex),promote:"" };
-      if(isObjectInList(move,movelist)) {
-        var newboard = MakeMove(board,move);
+      var move2 = { from:GetSquareIndex(selected,squareindex),to:GetSquareIndex(id,squareindex),promote:"Q" };
+      if(isObjectInList(move,movelist) || isObjectInList(move2,movelist)) {
+        if(isObjectInList(move,movelist)) {
+            var newboard = MakeMove(board,move);
+        } else {
+            var newboard = MakeMove(board,move2);
+        }
         sessionStorage.removeItem("selected");
         sessionStorage.removeItem("board");
         sessionStorage.setItem("board", JSON.stringify(newboard));
@@ -838,7 +848,7 @@ function AIMakeMove()
 
     if(bookmove.from != bookmove.to)
     {
-        document.getElementById("status").innerHTML="My move: " + squares[bookmove.from] + squares[bookmove.to] + " (book, 0)";
+        document.getElementById("status").innerHTML="My move: " + squares[bookmove.from] + squares[bookmove.to] + " (bookmove)";
         newboard = MakeMove(board,bookmove);
         sessionStorage.removeItem("board");
         sessionStorage.setItem("board", JSON.stringify(newboard));
@@ -849,8 +859,8 @@ function AIMakeMove()
             if(evaluatedmovelist[0].eval < -25000) { 
                 document.getElementById("status").innerHTML="I resign"; 
             } else {
-                document.getElementById("status").innerHTML="My move: " + squares[evaluatedmovelist[0].from]+squares[evaluatedmovelist[0].to] + " (" + evaluatedmovelist[0].eval + ", " + nodes + ")";
                 newboard = MakeMove(board,evaluatedmovelist[0]);
+                document.getElementById("status").innerHTML="My move: " + squares[evaluatedmovelist[0].from]+squares[evaluatedmovelist[0].to] + " (Eval=" + evaluatedmovelist[0].eval + ", Nodes=" + nodes + ", DrawCounter=" + newboard.drawcounter + ")";
                 sessionStorage.removeItem("board");
                 sessionStorage.setItem("board", JSON.stringify(newboard));
             }
