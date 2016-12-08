@@ -8,10 +8,10 @@
 /*
  *   Known issues
  *
- *   Castling
+ *   Opening book (for opening trainer)
+ *   Castling while in check
  *   En Passant
- *   Promotion
- *   Pawn jumps over pieces when making doublestep move
+ *   Promotion only to queen
  *   Kings are just high valued material
  *   GUI: Drag'n'Drop
  *   Faster movegeneration
@@ -20,19 +20,304 @@
  */
 
 
-
-
 /*
  *   Opening Book
  */
+var book = [
+// 1. 
+    { fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", moves: ["e2e4","d2d4","c2c4","g1f3"] },
+// 1. e4
+    { fen: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1", moves: ["c7c5","e7e5","e7e6","c7c6","d7d6","d7d5","g7g6","g8f6","b8c6"] },
+// 1. d4
+    { fen: "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1", moves: ["g8f6","d7d5","e7e6","f7f5","g7g6","d7d6","c7c5"] },
+// 1. e4 c5
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: ["g1f3"] },
+// 1. d4 Nf6
+    { fen: "rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 1 2", moves: ["c2c4","g1f3","c1g5"] },
+// 1. e4 c5 2. Nf3
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", moves: ["b8c6","d7d6","e7e6"] },
+// 1. d4 Nf6 2. c4
+    { fen: "rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq - 0 2", moves: ["e7e6","g7g6","c7c5","d7d6","e7e5"] },
+// 1. d4 d5
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2", moves: ["c2c4","g1f3"] },
+// 1. Nf3
+    { fen: "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1", moves: ["g8f6","d7d5","c7c5","g7g6","f7f5","d7d6"] },
+// 1. e4 e5
+    { fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: ["g1f3"] },
+// 1. e4 e5 2. Nf3
+    { fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", moves: ["b8c6", "d7d6"] },
+// 1. d4 d5 2. c4
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq - 0 2", moves: ["e7e6","c7c6","dxc4"] },
+// 1. e4 e5 2. Nf3 Nc6
+    { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", moves: ["f1b5","f1c4","d2d4","b1c3","c2c3"] },
+// 1. d4 Nf6 2. c4 e6
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3", moves: ["b1c3","g1f3","g2g3"] },
+// 1. e4 c5 2. Nf3 d6
+    { fen: "rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3", moves: ["d2d4","f1b5","c2c3","b1c3"] },
+// 1. c4
+    { fen: "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq - 0 1", moves: ["g8f6","e7e5","e7e6","c7c5","g7g6"] },
+// 1. e4 e6
+    { fen: "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: ["d2d4"] },
+// 1. e4 c5 2. Nf3 d6 3. d4
+    { fen: "rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", moves: ["c5d4"] },
+// 1. e4 e6 2. d4
+    { fen: "rnbqkbnr/pppp1ppp/4p3/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", moves: ["d7d5"] },
+// 1. e4 e6 2. d4 d5
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3", moves: ["b1c3","b1d2","e4e5","e4d5"] },
+// 1. e4 c5 2. Nf3 d6 3. d4 cxd4
+    { fen: "rnbqkbnr/pp2ppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", moves: ["f3d4"] },
+// 1. d4 Nf6 2. c4 g6
+    { fen: "rnbqkb1r/pppppp1p/5np1/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3", moves: ["b1c3","g1f3","g2g3","f2f3"] },
+// 1. e4 e5 2. Nf3 Nc6 3. Bb5
+    { fen: "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3", moves: ["a7a6","g8f6","f7f5","d7d6","f8c5","g8e7","c6d4","g7g6"] },
+// 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4
+    { fen: "rnbqkbnr/pp2pppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: ["g8f6"] },
+// 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6
+    { fen: "rnbqkb1r/pp2pppp/3p1n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5", moves: ["b1c3"] },
+// 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3
+    { fen: "rnbqkb1r/pp2pppp/3p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R b KQkq - 2 5", moves: ["a7a6","g7g6","b8c6","e7e6","c8d7","e7e5"] },
+// 1. e4 c5 2. Nf3 e6
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3", moves: ["d2d4","b1c3","c2c3","d2d3"] },
+// 1. Nf3 Nf6
+    { fen: "rnbqkb1r/pppppppp/5n2/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 2 2", moves: ["c2c4","g2g3","d2d4","b2b3"] },
+// 1. d4 d5 2. c4 c6
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3", moves: ["g1f3","b1c3","c4d5","e2e3"] },
+// 1. e4 c5 2. Nf3 Nc6
+    { fen: "r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", moves: ["d2d4","f1b5","b1c3","c2c3","d2d3"] },
+// 1. d4 Nf6 2. Nf3
+    { fen: "rnbqkb1r/pppppppp/5n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 2 2", moves: ["g7g6","e7e6","d7d5","c7c5","d7d6","b7b6","b7b5","c7c6"] },
+// 1. d4 Nf6 2. c4 g6 3. Nc3
+    { fen: "rnbqkb1r/pppppp1p/5np1/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: ["f8g7","d7d5","d7d6","c7c5"] },
+    { fen: "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6", moves: [""] },
+    { fen: "r1bqkbnr/1ppp1ppp/p1n5/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 4", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/8/2P5/5N2/PP1PPPPP/RNBQKB1R b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+// 1. d4 Nf6 2. c4 e6 3. Nc3 Bb4
+    { fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3", moves: [""] },
+    { fen: "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqk2r/ppppppbp/5np1/8/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqk2r/ppppppbp/5np1/8/2PPP3/2N5/PP3PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqk2r/ppp1ppbp/3p1np1/8/2PPP3/2N5/PP3PPP/R1BQKBNR w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/3p4/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/p1pp1ppp/1p2pn2/8/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pppp/5n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq - 3 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/3p4/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pppppp1p/5np1/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPPN1PPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/8/2P5/8/PP1PPPPP/RNBQKBNR w KQkq - 1 2", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 1 2", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkbnr/pppp1ppp/4p3/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/1p1p1ppp/p3p3/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pppp/3p1n2/8/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 2 3", moves: [""] },
+// 1. e4 c5 2. Nc3
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2", moves: ["b8c6","e7e6","d7d6","a7a6","g7g6"] },
+    { fen: "rnbqkbnr/pppppp1p/6p1/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/5np1/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+// 1. e4 c5 2. c3
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/4P3/2P5/PP1P1PPP/RNBQKBNR b KQkq - 0 2", moves: ["d7d5","g8f6","e7e6","d7d6","g7g6","b8c6","e7e5"] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq - 1 4", moves: [""] },
+    { fen: "rnbqk1nr/ppppppbp/6p1/8/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/pp1ppppp/5n2/2p5/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pppp1ppp/8/4p3/2P5/8/PP1PPPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pp3ppp/2p1pn2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5", moves: [""] },
+    { fen: "r1bqkb1r/pp1ppppp/2n2n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5", moves: [""] },
+    { fen: "r1bqkb1r/pp1ppppp/2n2n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R b KQkq - 2 5", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/4PN2/PP3PPP/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pppppp1p/6p1/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/pp1ppppp/5n2/2pP4/2P5/8/PP2PPPP/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppppp/2n5/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pppp/5n2/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 2 3", moves: [""] },
+    { fen: "rnbqkbnr/pppp1ppp/4p3/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "r1bqkbnr/pp1p1ppp/2n1p3/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5", moves: [""] },
+    { fen: "rnbqkb1r/pppppp1p/5np1/8/2P5/5N2/PP1PPPPP/RNBQKB1R w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/8/3PN3/8/PPP2PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3", moves: [""] },
+    { fen: "rnbqk1nr/ppp2ppp/4p3/3p4/1b1PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkb1r/p1pp1ppp/1p2pn2/8/2PP4/5NP1/PP2PP1P/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/3p4/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2P5/5N2/PP1PPPPP/RNBQKB1R w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PPQ1PPPP/R1B1KBNR b KQkq - 3 4", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/8/8/5NP1/PPPPPP1P/RNBQKB1R b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N1P3/PP3PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "r1bqkbnr/pp1p1ppp/2n1p3/8/3NP3/2N5/PPP2PPP/R1BQKB1R b KQkq - 2 5", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/8/2P5/2N5/PP1PPPPP/R1BQKBNR b KQkq - 2 2", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/8/5NP1/PPPPPP1P/RNBQKB1R b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", moves: [""] },
+    { fen: "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4", moves: [""] },
+    { fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N1B3/PPP2PPP/R2QKB1R b KQkq - 1 6", moves: [""] },
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/pppp1ppp/4p3/8/2P5/8/PP1PPPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/3p4/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqk2r/ppp1ppbp/3p1np1/8/2PPP3/2N2N2/PP3PPP/R1BQKB1R b KQkq - 1 5", moves: [""] },
+    { fen: "rnbqkbnr/pppppp1p/6p1/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/6B1/3P4/8/PPP1PPPP/RN1QKBNR b KQkq - 2 2", moves: [""] },
+    { fen: "rnbqkbnr/ppppp1pp/8/5p2/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3pP3/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqk1nr/ppppppbp/6p1/8/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 2 3", moves: [""] },
+    { fen: "rnbqk1nr/ppp2ppp/4p3/3pP3/1b1P4/2N5/PPP2PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pppppp1p/5np1/8/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/8/2pP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqk2r/ppppppbp/5np1/8/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 1 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/8/2pP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3", moves: [""] },
+    { fen: "r1bqkb1r/pp2pppp/2np1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 3 6", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/6P1/PP2PP1P/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppppp/2n5/2p5/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 2 3", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/8/P1pP4/2N2N2/1P2PPPP/R1BQKB1R b KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/5NP1/PP2PP1P/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "r1bqkbnr/pppp1ppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/2P5/5N2/PP1PPPPP/RNBQKB1R b KQkq - 0 2", moves: [""] },
+    { fen: "rn1qkbnr/pp2pppp/2p5/5b2/3PN3/8/PPP2PPP/R1BQKBNR w KQkq - 1 5", moves: [""] },
+    { fen: "rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pppp1ppp/8/4p3/2P5/2N5/PP1PPPPP/R1BQKBNR b KQkq - 1 2", moves: [""] },
+    { fen: "rnbqkbnr/pppppppp/8/8/8/6P1/PPPPPP1P/RNBQKBNR b KQkq - 0 1", moves: [""] },
+    { fen: "rnbqkb1r/pppppp1p/5np1/8/2P5/2N2N2/PP1PPPPP/R1BQKB1R b KQkq - 1 3", moves: [""] },
+    { fen: "r1b1kbnr/ppqp1ppp/2n1p3/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 3 6", moves: [""] },
+    { fen: "rn1qkbnr/pp2pppp/2p5/3pPb2/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 1 4", moves: [""] },
+    { fen: "rn1qkbnr/pp2pppp/2p5/5b2/3P4/6N1/PPP2PPP/R1BQKBNR b KQkq - 2 5", moves: [""] },
+    { fen: "rn1qkbnr/pp2pppp/2p3b1/8/3P4/6N1/PPP2PPP/R1BQKBNR w KQkq - 3 6", moves: [""] },
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/2P5/8/PP1PPPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/1p1p1ppp/p3p3/8/3NP3/3B4/PPP2PPP/RNBQK2R b KQkq - 1 5", moves: [""] },
+    { fen: "r1bqkb1r/pp1p1ppp/2n2n2/4p3/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6", moves: [""] },
+    { fen: "r1bqkbnr/pppp1ppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "r1bqkb1r/pp1p1ppp/2n2n2/1N2p3/4P3/2N5/PPP2PPP/R1BQKB1R b KQkq - 1 6", moves: [""] },
+    { fen: "rnbqk2r/ppppppbp/5np1/8/2PP4/5NP1/PP2PP1P/RNBQKB1R b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/6p1/3n4/3P4/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/5np1/3P4/3P4/2N5/PP2PPPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pp2pp1p/3p1np1/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6", moves: [""] },
+    { fen: "r1bqkb1r/pp3ppp/2np1n2/1N2p3/4P3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 7", moves: [""] },
+    { fen: "r1bqkb1r/pp3ppp/2nppn2/6B1/3NP3/2N5/PPP2PPP/R2QKB1R w KQkq - 0 7", moves: [""] },
+    { fen: "rn1qkb1r/p1pp1ppp/bp2pn2/8/2PP4/5NP1/PP2PP1P/RNBQKB1R w KQkq - 1 5", moves: [""] },
+    { fen: "rnb1kbnr/ppp1pppp/8/3q4/8/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2", moves: [""] },
+    { fen: "rn1qkb1r/pp2pppp/2p2n2/5b2/P1pP4/2N2N2/1P2PPPP/R1BQKB1R w KQkq - 1 6", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/5n2/4N3/4P3/8/PPPP1PPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp1ppppp/2p5/8/2P5/8/PP1PPPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/2P5/5N2/PP1PPPPP/RNBQKB1R b KQkq - 0 2", moves: [""] },
+    { fen: "r1bqkb1r/pp3ppp/2nppn2/6B1/3NP3/2N5/PPPQ1PPP/R3KB1R b KQkq - 1 7", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N1P3/PP3PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/3p1n2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pppp/5n2/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/3p1np1/8/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/3p1n2/4p3/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/3p1n2/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/3p4/8/4n3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/pp3ppp/2p1pn2/3p4/2PP4/2N1PN2/PP3PPP/R1BQKB1R b KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/1p2pppp/p1p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2P5/5NP1/PP1PPP1P/RNBQKB1R b KQkq - 0 3", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppppp/2n5/2p5/4P3/2N2N2/PPPP1PPP/R1BQKB1R b KQkq - 3 3", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkb1r/1p2pppp/p2p1n2/6B1/3NP3/2N5/PPP2PPP/R2QKB1R b KQkq - 1 6", moves: [""] },
+    { fen: "r1bqkb1r/1p3ppp/p1np1n2/1N2p1B1/4P3/2N5/PPP2PPP/R2QKB1R w KQkq - 0 8", moves: [""] },
+    { fen: "r1bqkb1r/pp3ppp/2np1n2/1N2p1B1/4P3/2N5/PPP2PPP/R2QKB1R b KQkq - 1 7", moves: [""] },
+    { fen: "rnbqkb1r/pp1ppppp/5n2/2p5/4P3/2P5/PP1P1PPP/RNBQKBNR w KQkq - 1 3", moves: [""] },
+    { fen: "r1bqkb1r/1p3ppp/p1np1n2/4p1B1/4P3/N1N5/PPP2PPP/R2QKB1R b KQkq - 1 8", moves: [""] },
+    { fen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/5n2/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqk1nr/pp3ppp/4p3/2ppP3/1b1P4/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/8/3nP3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 1 3", moves: [""] },
+    { fen: "rnbqkb1r/p2ppppp/5n2/1ppP4/2P5/8/PP2PPPP/RNBQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pp1ppppp/5n2/2p1P3/8/2P5/PP1P1PPP/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pp1ppppp/8/2pnP3/8/2P5/PP1P1PPP/RNBQKBNR w KQkq - 1 4", moves: [""] },
+    { fen: "rnbqk2r/ppppppbp/5np1/8/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkb1r/1p3ppp/p2p1n2/4p3/3NP3/2N1B3/PPP2PPP/R2QKB1R w KQkq - 0 7", moves: [""] },
+    { fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkbnr/1p1p1ppp/p3p3/8/3NP3/2N5/PPP2PPP/R1BQKB1R b KQkq - 1 5", moves: [""] },
+    { fen: "r1bqkb1r/5ppp/p1np1n2/1p2p1B1/4P3/N1N5/PPP2PPP/R2QKB1R w KQkq - 0 9", moves: [""] },
+    { fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP1BPPP/R1BQK2R b KQkq - 1 6", moves: [""] },
+    { fen: "rnbqkbnr/pppp1ppp/8/4p3/2P5/6P1/PP1PPP1P/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "r1bqkb1r/pp1n1ppp/2p1pn2/3p4/2PP4/2N1PN2/PP3PPP/R1BQKB1R w KQkq - 1 6", moves: [""] },
+    { fen: "r1bqkbnr/pp1ppp1p/2n3p1/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4", moves: [""] },
+    { fen: "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 4 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p2B1/3PP3/2N5/PPP2PPP/R2QKBNR b KQkq - 3 4", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqk1nr/ppp1ppbp/3p2p1/8/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pp3ppp/2p1pn2/3p2B1/2PP4/2N2N2/PP2PPPP/R2QKB1R b KQkq - 1 5", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/6p1/3n4/3PP3/2N5/PP3PPP/R1BQKBNR b KQkq - 0 5", moves: [""] },
+    { fen: "r1bqkb1r/pp2pppp/2np1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3p4/3PP3/8/PPPN1PPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/6p1/8/3PP3/2P5/P4PPP/R1BQKBNR b KQkq - 0 6", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pp1p/6p1/8/3PP3/2n5/PP3PPP/R1BQKBNR w KQkq - 0 6", moves: [""] },
+    { fen: "rnbqkbnr/ppp2ppp/4p3/3pP3/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/2P5/5N2/PP1PPPPP/RNBQKB1R w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkbnr/pp3ppp/4p3/2pp4/3PP3/8/PPPN1PPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/ppp1pppp/3p4/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 1 2", moves: [""] },
+    { fen: "rnbqkb1r/pp2pp1p/3p1np1/8/3NP3/2N1B3/PPP2PPP/R2QKB1R b KQkq - 1 6", moves: [""] },
+    { fen: "rnbqk2r/ppp1ppbp/6p1/8/3PP3/2P5/P4PPP/R1BQKBNR w KQkq - 1 7", moves: [""] },
+    { fen: "rnbqkbnr/pp3ppp/4p3/2ppP3/3P4/2P5/PP3PPP/RNBQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq - 1 4", moves: [""] },
+    { fen: "rnbqkbnr/pp3ppp/4p3/2ppP3/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rn1qkbnr/pp2pppp/2p3b1/8/3P3P/6N1/PPP2PP1/R1BQKBNR b KQkq - 0 6", moves: [""] },
+    { fen: "rn1qkbnr/pp2ppp1/2p3bp/8/3P3P/6N1/PPP2PP1/R1BQKBNR w KQkq - 0 7", moves: [""] },
+    { fen: "rnbqkb1r/pppppppp/8/3nP3/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 3", moves: [""] },
+    { fen: "r1bqkb1r/pp2pppp/2np1n2/6B1/3NP3/2N5/PPP2PPP/R2QKB1R b KQkq - 4 6", moves: [""] },
+    { fen: "rnbqk1nr/pp3ppp/4p3/2ppP3/1b1P4/P1N5/1PP2PPP/R1BQKBNR b KQkq - 0 5", moves: [""] },
+    { fen: "rnbqkb1r/pp1p1ppp/4pn2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5", moves: [""] },
+    { fen: "rnbqk2r/ppp1ppbp/3p1np1/8/2PPP3/2N2N2/PP3PPP/R1BQKB1R b KQkq - 0 5", moves: [""] },
+    { fen: "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4", moves: [""] },
+    { fen: "rnbqk2r/pp2ppbp/3p1np1/8/3NP3/2N1B3/PPP2PPP/R2QKB1R w KQkq - 2 7", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3pP3/3P4/8/PPPN1PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp1pppp/3p4/3nP3/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pppppp1p/6p1/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pppn1ppp/4p3/3pP3/3P4/8/PPPN1PPP/R1BQKBNR w KQkq - 1 5", moves: [""] },
+    { fen: "rnbqkb1r/1p3ppp/p2ppn2/6B1/3NP3/2N5/PPP2PPP/R2QKB1R w KQkq - 0 7", moves: [""] },
+    { fen: "rnbqkbnr/pp3ppp/2p1p3/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/ppp2ppp/4pn2/3pP3/3P4/2N5/PPP2PPP/R1BQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkbnr/pp2pppp/8/3p4/2PP4/8/PP3PPP/RNBQKBNR b KQkq - 0 4", moves: [""] },
+    { fen: "rnbqkb1r/pppn1ppp/4p3/3pP3/3P4/2N5/PPP2PPP/R1BQKBNR w KQkq - 1 5", moves: [""] },
+    { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R b KQkq - 3 3", moves: [""] },
+    { fen: "rnbqkb1r/pp1p1ppp/4pn2/2p5/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
+// 1. c4 g6
+    { fen: "rnbqkbnr/pppppp1p/6p1/8/2P5/8/PP1PPPPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/5n2/3p4/2PP4/8/PP3PPP/RNBQKBNR w KQkq - 1 5", moves: [""] },
+    { fen: "rnbqk2r/ppppppbp/5np1/8/2P5/2N2N2/PP1PPPPP/R1BQKB1R w KQkq - 2 4", moves: [""] },
+// 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6 6. Be3 Bg7 7. f3
+    { fen: "rnbqk2r/pp2ppbp/3p1np1/8/3NP3/2N1BP2/PPP3PP/R2QKB1R b KQkq - 0 7", moves: [""] },
+    { fen: "rnbqkb1r/pp1ppppp/5n2/2p5/2P5/5N2/PP1PPPPP/RNBQKB1R w KQkq - 0 3", moves: [""] },
+    { fen: "rnbqkb1r/pp1p1ppp/4pn2/8/3NP3/2N5/PPP2PPP/R1BQKB1R b KQkq - 2 5", moves: [""] },
+    { fen: "rnbqkb1r/pp2pppp/5n2/3p4/2PP4/2N5/PP3PPP/R1BQKBNR b KQkq - 2 5", moves: [""] },
+    { fen: "rnbqkbnr/pp3ppp/2p1p3/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
+    { fen: "rn1qkbnr/pp1bpppp/3p4/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 4", moves: [""] },
 
-var book=[
-    { position : "rnbqkbnrpppppppp                                PPPPPPPPRNBQKBNR W", move: {from: 12, to: 28, promote: ""} },
-    { position : "rnbqkbnrpppppppp                    P           PPPP PPPRNBQKBNR B", move: {from: 52, to: 36, promote: ""} },
-    { position : "rnbqkbnrpppp ppp            p       P           PPPP PPPRNBQKBNR W", move: {from: 6, to: 21, promote: ""} },
-    { position : "rnbqkbnrpppp ppp            p       P        N  PPPP PPPRNBQKB R B", move: {from: 57, to: 42, promote: ""} },
-    { position : "r bqkbnrpppp ppp  n         p       P        N  PPPP PPPRNBQKB R W", move: {from: 5, to: 33, promote: ""} }
+// Manually added positions
+// 1. e4 c5 2. d4
+    { fen: "rnbqkbnr/pp1ppppp/8/2p5/3PP3/8/PPP2PPP/RNBQKBNR b KQkq -", moves: ["c5d4"] }
+
 ];
+
 
 function GetBoardString(board)
 {
@@ -47,19 +332,38 @@ function GetBoardString(board)
            " " + board.tomove;
 }
 
+/*
 function GetBookMove(board)
 {
-    var boardstr=GetBoardString(board);
     var move = {from: "a1", to: "a1", promote: ""};
-
+    var temp = GetEmptyPosition();
     for(var i=0;i<book.length;i++) {
-        if(boardstr==book[i].position) {
-            move = book[i].move;
+        temp=GetBoardFromFEN(book[i].fen);
+        if(JSON.stringify(board.pos)==JSON.stringify(temp.pos) && board.tomove==temp.tomove) {
+            move = book[i].moves[Math.floor(Math.random()*book[i].moves.length)];
         }
     }
-    return move;
+    return move;    
 }
+*/
 
+// TODO: GetBookMove can not handle promotion.
+function GetBookMove(board)
+{
+    var squareindex=GenerateSquareIndex();
+    var move = {from: "a1", to: "a1", promote: ""};
+    var temp = GetEmptyPosition();
+    var movestr = "";
+
+    for(var i=0;i<book.length;i++) {
+        temp=GetBoardFromFEN(book[i].fen);
+        if(JSON.stringify(board.pos)==JSON.stringify(temp.pos) && board.tomove==temp.tomove) {   
+            movestr = book[i].moves[Math.floor(Math.random()*book[i].moves.length)];
+            move = { from: GetSquareIndex(movestr.substring(0,2),squareindex), to: GetSquareIndex(movestr.substring(2,4),squareindex), promote: ""};
+        }
+    }
+    return move;    
+}
 
 
 
@@ -639,13 +943,13 @@ function MakeMove(board,move)
     }
     if(move.from==60 && move.to==58 && board.pos[60]=="k") {
         rv.br.push(59);
-        rv.pos[59]="R";
+        rv.pos[59]="r";
         rv.br=rv.br.filter(function(value){if(value==56) { return false; } else { return true; }});
         rv.pos[56]=" ";   
     }
     if(move.from==60 && move.to==62 && board.pos[60]=="k") {
         rv.br.push(61);
-        rv.pos[61]="R";
+        rv.pos[61]="r";
         rv.br=rv.br.filter(function(value){if(value==63) { return false; } else { return true; }});
         rv.pos[63]=" ";   
     }
@@ -678,7 +982,7 @@ function AlfaBeta(board,ply,alfa,beta,squares,squareindex,knightmoves)
     var movelist = GenerateMoveList(board,squares,squareindex,knightmoves);
     var newboard = {};
 
-    if(movelist.length==0) {
+    if(movelist.length==0 || board.drawcounter>99) {
         return EndOfGameEvaluation(board,ply);
     } else {
         if(ply==0) {
@@ -705,7 +1009,7 @@ function Search(board,evaluatedmovelist,maxply,t0,squares,squareindex,knightmove
         newboard=MakeMove(board,evaluatedmovelist[i]);
         evaluatedmovelist[i].eval = -AlfaBeta(newboard, maxply, -besteval, Infinity, squares, squareindex, knightmoves);
         besteval=Math.max(evaluatedmovelist[i].eval,besteval);
-
+/*
         if (typeof performance != 'undefined') {
             t1 = performance.now();
             elapsed=t1-t0;      
@@ -713,6 +1017,7 @@ function Search(board,evaluatedmovelist,maxply,t0,squares,squareindex,knightmove
             t1 = process.hrtime(t0);
             elapsed=Math.round((t1[0]*1000) + (t1[1]/1000000));    
         }
+*/
     }
     return evaluatedmovelist;
 }
@@ -730,7 +1035,7 @@ function IncrementalSearch(board,maxdepth,squares,squareindex,knightmoves)
     } else {
         t0 = process.hrtime();
     }
-    for(var maxply=1;maxply<maxdepth && evaluatedmovelist.length>1 && elapsed<3000;maxply+=2) {
+    for(var maxply=1;maxply<maxdepth && evaluatedmovelist.length>1 && elapsed<300000;maxply+=2) {
         evalmovelist = Search(board,evaluatedmovelist,maxply,t0,squares,squareindex,knightmoves);
         evaluatedmovelist = evalmovelist.sort(function(a,b) { return b.eval-a.eval; });
         if(maxply==1 && evaluatedmovelist[0].eval < -25000) { break; }
@@ -826,6 +1131,11 @@ function userclick(id)
         sessionStorage.removeItem("board");
         sessionStorage.setItem("board", JSON.stringify(newboard));
         document.getElementById("status").innerHTML="Thinking...";
+        if(isWhiteToMove(newboard)) {
+            document.getElementById("players").innerHTML="White: AI - Black: Human";
+        } else {
+            document.getElementById("players").innerHTML="White: Human - Black: AI";
+        }
         UpdateHTMLBoard();
         setTimeout('AIMakeMove()',1000);
       } else {
@@ -846,6 +1156,12 @@ function AIMakeMove()
     var newboard = {};
     var bookmove = GetBookMove(board);
 
+    if(isWhiteToMove(board)) {
+        document.getElementById("players").innerHTML="White: AI - Black: Human";
+    } else {
+        document.getElementById("players").innerHTML="White: Human - Black: AI";
+    }
+    document.getElementById("status").innerHTML="Thinking...";
     if(bookmove.from != bookmove.to)
     {
         document.getElementById("status").innerHTML="My move: " + squares[bookmove.from] + squares[bookmove.to] + " (bookmove)";
@@ -855,9 +1171,9 @@ function AIMakeMove()
     } else {
         if(movelist.length > 0)
         {
-            var evaluatedmovelist = IncrementalSearch(board,6,squares,squareindex,knightmoves);
+            var evaluatedmovelist = IncrementalSearch(board,4,squares,squareindex,knightmoves);
             if(evaluatedmovelist[0].eval < -25000) { 
-                document.getElementById("status").innerHTML="I resign"; 
+                document.getElementById("status").innerHTML="<H1>You win!</H1>";
             } else {
                 newboard = MakeMove(board,evaluatedmovelist[0]);
                 document.getElementById("status").innerHTML="My move: " + squares[evaluatedmovelist[0].from]+squares[evaluatedmovelist[0].to] + " (Eval=" + evaluatedmovelist[0].eval + ", Nodes=" + nodes + ", DrawCounter=" + newboard.drawcounter + ")";
@@ -903,6 +1219,7 @@ function getURLParameter(name) {
 function InitializeGUI()
 {
     UpdateHTMLBoard();
+    document.getElementById("status").innerHTML="White to move (click on players above to make AI move)";
 }
 
 
@@ -1004,7 +1321,6 @@ function GetBoardFromFEN(fen)
                 break;
         }
         x++;
-console.log(x);
     }
     x=-1;
     y=-1;
