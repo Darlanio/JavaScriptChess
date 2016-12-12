@@ -15,7 +15,7 @@
  *   Kings are just high valued material
  *   GUI: Drag'n'Drop
  *   Faster movegeneration
- *   faster search?
+ *   faster search using undo move
  *   
  */
 
@@ -88,24 +88,42 @@ var book = [
     { fen: "rnbqkb1r/pppppppp/5n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 2 2", moves: ["g7g6","e7e6","d7d5","c7c5","d7d6","b7b6","b7b5","c7c6"] },
 // 1. d4 Nf6 2. c4 g6 3. Nc3
     { fen: "rnbqkb1r/pppppp1p/5np1/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: ["f8g7","d7d5","d7d6","c7c5"] },
-    { fen: "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: [""] },
-    { fen: "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4", moves: [""] },
-    { fen: "rnbqkbnr/pp1p1ppp/4p3/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", moves: [""] },
-    { fen: "rnbqkbnr/pp1p1ppp/4p3/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: [""] },
-    { fen: "rnbqkbnr/pp1p1ppp/4p3/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", moves: [""] },
-    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: [""] },
-    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
-    { fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6", moves: [""] },
-    { fen: "r1bqkbnr/1ppp1ppp/p1n5/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 4", moves: [""] },
-    { fen: "rnbqkb1r/pppppppp/5n2/8/2P5/5N2/PP1PPPPP/RNBQKB1R b KQkq - 0 2", moves: [""] },
-    { fen: "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", moves: [""] },
+// 1. e4 c6
+    { fen: "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", moves: ["d2d4"] },
+// 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6
+    { fen: "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4", moves: ["b5a4","b5c6"] },
+// 1. e4 c5 2. Nf3 e6 3. d4 cxd4
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4", moves: ["f3d4"] },
+// 1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: ["a7a6","b8c6","g8f6"] },
+// 1. e4 c5 2. Nf3 e6 3. d4
+    { fen: "rnbqkbnr/pp1p1ppp/4p3/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3", moves: ["c5d4"] },
+// 1. d4 Nf6 2. c4 e6 3. Nf3
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: ["d7d5","b7b6","f8b4","c7c5"] },
+// 1. d4 Nf6 2. c4 e6 3. Nc3
+    { fen: "rnbqkb1r/pppp1ppp/4pn2/8/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", moves: ["f8b4"] },
+// 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6	
+    { fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6", moves: ["c1e3","c1g5","f1e2","f1c4","f2f4","h2h3","f2f3","g2g3"] },
+// 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4
+//    { fen: "r1bqkbnr/1ppp1ppp/p1n5/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 4", moves: ["g8f6","d7d6","b7b5","g8e7","f7f5","f8c5"] },
+    { fen: "r1bqkbnr/1ppp1ppp/p1n5/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 4", moves: ["g8f6","d7d6","g8e7","f7f5"] },
+// 1. Nf3 Nf6 2. c4	
+    { fen: "rnbqkb1r/pppppppp/5n2/8/2P5/5N2/PP1PPPPP/RNBQKB1R b KQkq - 0 2", moves: ["e7e6","g7g6","c7c5"] },
+// 1. e4 c6 2. d4	
+    { fen: "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2", moves: ["d7d5"] },
 // 1. d4 Nf6 2. c4 e6 3. Nc3 Bb4
-    { fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
-    { fen: "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2", moves: [""] },
-    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3", moves: [""] },
-    { fen: "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5", moves: [""] },
-    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: [""] },
-    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 4", moves: [""] },
+    { fen: "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4", moves: ["e2e3","d1c2","g1f3","f2f3"] },
+// 1. Nf3 d5	
+    { fen: "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2", moves: ["d2d4","g2g3","c2c4"] },
+// 1. e4 c6 2. d4 d5
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3", moves: ["b1c3","e4e5","e4d5","b1d2","f2f3"] },
+// 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6	
+    { fen: "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5", moves: ["e1g1","d2d3","d1e2","d2d4","b1c3"] },
+// 1. d4 d5 2. c4 c6 3. Nf3
+    { fen: "rnbqkbnr/pp2pppp/2p5/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 1 3", moves: ["g8f6","e7e6"] },
+// 1. d4 d5 2. c4 c6 3. Nf3 Nf6	
+    { fen: "rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 4", moves: ["b1c3","e2e3"] },
+	
     { fen: "rnbqk2r/ppppppbp/5np1/8/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4", moves: [""] },
     { fen: "r1bqkbnr/pp1ppppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4", moves: [""] },
     { fen: "rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3", moves: [""] },
@@ -311,8 +329,6 @@ var book = [
     { fen: "rnbqkb1r/pp2pppp/5n2/3p4/2PP4/2N5/PP3PPP/R1BQKBNR b KQkq - 2 5", moves: [""] },
     { fen: "rnbqkbnr/pp3ppp/2p1p3/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 4", moves: [""] },
     { fen: "rn1qkbnr/pp1bpppp/3p4/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 4", moves: [""] },
-
-// Manually added positions
 // 1. e4 c5 2. d4
     { fen: "rnbqkbnr/pp1ppppp/8/2p5/3PP3/8/PPP2PPP/RNBQKBNR b KQkq -", moves: ["c5d4"] }
 
@@ -968,7 +984,131 @@ function MakeMove(board,move)
     return rv;
 }
 
+function MakeMoveWithUndo(board,move)
+{
+    var piecetype = GetPieceTypes();
+    var piecefrom = board.pos[move.from];
+    var piecetypefrom = piecetype[piecefrom];
+    var pieceto = board.pos[move.to]
+    var piecetypeto = piecetype[pieceto];
+    var temp;
+    var undo = { pos : [] };
+    var i=0;
 
+// Gather Undo Information
+    undo.drawcounter=board.drawcounter;
+    undo.pos[move.to]=board.pos[move.to];
+    undo.pos[move.from]=board.pos[move.from];
+    undo[piecetypefrom]=[];
+    for(i=0;i<board[piecetypefrom].length;i++) undo[piecetypefrom].push(board[piecetypefrom][i]);
+    undo.tomove=board.tomove;
+
+// Update DrawCounter
+    board.drawcounter++;
+    if(board.pos[move.from]=='P' || board.pos[move.from]=='p') board.drawcounter=0;
+
+// Remove any captured piece
+    if(board.pos[move.to]!=" ") {
+        undo[piecetypeto]=[];
+        for(i=0;i<board[piecetypeto].length;i++) undo[piecetypeto].push(board[piecetypeto][i]);
+
+        temp=board[piecetypeto].filter(function(value){if(value==move.to) { return false; } else { return true; }});
+        board[piecetypeto]=temp;
+        board.drawcounter=0;
+    }
+
+// Place moved/promoted piece on final square
+    if(move.promote=="") {
+        undo[piecetypefrom]=[];
+        for(i=0;i<board[piecetypefrom].length;i++) undo[piecetypefrom].push(board[piecetypefrom][i]);
+
+        board[piecetypefrom].push(move.to);
+        board.pos[move.to]=board.pos[move.from];
+    } else {
+        undo[piecetype[move.promote]]=[];
+        for(i=0;i<board[piecetype[move.promote]].length;i++) undo[piecetype[move.promote]].push(board[piecetype[move.promote]]);
+
+        board[piecetype[move.promote]].push(move.to);
+        board.pos[move.to]=move.promote;
+    }
+
+// Remove moved/promoted piece from original square
+    temp=board[piecetypefrom].filter(function(value){if(value==move.from) { return false; } else { return true; }});
+    board[piecetypefrom]=temp;
+    board.pos[move.from]=" ";
+
+// Castling
+    if(move.from==4 && move.to==2 && board.pos[4]=="K") {
+        undo.wr=[];
+        for(i=0;i<board.wr.length;i++) undo.wr.push(board.wr[i]);
+        undo.pos[0]=board.pos[0];
+        undo.pos[3]=board.pos[3];
+
+        board.wr.push(3);
+        board.pos[3]="R";
+        temp=board.wr.filter(function(value){if(value==0) { return false; } else { return true; }});
+        board.wr=temp;
+        board.pos[0]=" ";   
+    }
+    if(move.from==4 && move.to==6 && board.pos[4]=="K") {
+        undo.wr=[];
+        for(i=0;i<board.wr.length;i++) undo.wr.push(board.wr[i]);
+        undo.pos[5]=board.pos[5];
+        undo.pos[7]=board.pos[7];
+
+        board.wr.push(5);
+        board.pos[5]="R";
+        temp=board.wr.filter(function(value){if(value==7) { return false; } else { return true; }});
+        board.wr=temp;
+        board.pos[7]=" ";   
+    }
+    if(move.from==60 && move.to==58 && board.pos[60]=="k") {
+        undo.br=[];
+        for(i=0;i<board.br.length;i++) undo.br.push(board.br[i]);
+        undo.pos[56]=board.pos[56];
+        undo.pos[59]=board.pos[59];
+
+        board.br.push(59);
+        board.pos[59]="r";
+        temp=board.br.filter(function(value){if(value==56) { return false; } else { return true; }});
+        board.br=temp;
+        board.pos[56]=" ";   
+    }
+    if(move.from==60 && move.to==62 && board.pos[60]=="k") {
+        undo.br=[];
+        for(i=0;i<board.br.length;i++) undo.br.push(board.br[i]);
+        undo.pos[61]=board.pos[61];
+        undo.pos[63]=board.pos[63];
+
+        board.br.push(61);
+        board.pos[61]="r";
+        temp=board.br.filter(function(value){if(value==63) { return false; } else { return true; }});
+        board.br=temp;
+        board.pos[63]=" ";   
+    }
+
+    if(move.from==0 || move.from==4) { undo.wqc=board.wqc; board.wqc=false; }
+    if(move.from==4 || move.from==7) { undo.wkc=board.wkc; board.wkc=false; }
+    if(move.from==56 || move.from==60) { undo.bqc=board.bqc; board.bqc=false; }
+    if(move.from==60 || move.from==63) { undo.bkc=board.bkc; board.bkc=false; }
+
+// Flip side to move
+    if(isWhiteToMove(board)) {
+        board.tomove="B";
+    } else {
+        board.tomove="W";
+    }
+    //return board;
+    return undo;
+}
+
+function UndoMove(board,undo)
+{
+    var key="";
+    for(key in undo.pos) board.pos[key]=undo.pos[key];
+    for(key in undo) if(key!="pos") board[key]=undo[key];
+    return board;
+}
 
 /*
  *   SEARCH (Alfa Beta)
@@ -981,6 +1121,7 @@ function AlfaBeta(board,ply,alfa,beta,squares,squareindex,knightmoves)
 {
     var movelist = GenerateMoveList(board,squares,squareindex,knightmoves);
     var newboard = {};
+    var undo = "";
 
     if(movelist.length==0 || board.drawcounter>99) {
         return EndOfGameEvaluation(board,ply);
@@ -989,8 +1130,16 @@ function AlfaBeta(board,ply,alfa,beta,squares,squareindex,knightmoves)
             return Evaluation(board,movelist.length,squares,squareindex,knightmoves);
         } else {
             for(var i=0;i<movelist.length;i++) {
-                newboard=MakeMove(board,movelist[i]);
-                alfa=Math.max(alfa,-AlfaBeta(newboard,ply-1,-beta,-alfa,squares,squareindex,knightmoves));
+                // When using JSON.stringify and JSON.parse to make undo, it is better to skip undo...
+                // 40k in 7,5s - 15k in 3,2s
+                //newboard=MakeMove(board,movelist[i]);
+                //alfa=Math.max(alfa,-AlfaBeta(newboard,ply-1,-beta,-alfa,squares,squareindex,knightmoves));
+
+                // 40k in 7,2s - 15k in 3,0s
+                undo=MakeMoveWithUndo(board,movelist[i]);
+                alfa=Math.max(alfa,-AlfaBeta(board,ply-1,-beta,-alfa,squares,squareindex,knightmoves));
+                board=UndoMove(board,undo);
+
                 if(alfa>=beta) { break; }
             }
         }
